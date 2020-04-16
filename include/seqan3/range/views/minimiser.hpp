@@ -54,6 +54,9 @@ private:
     //!\brief The second underlying range.
     second_urange_t second_range;
 
+    //!\brief The second underlying range.
+    urng_t2 urange2;
+
     //!\brief The number of values in one window.
     uint32_t window_values_size;
 
@@ -302,6 +305,30 @@ public:
             window_first(window_values_size);
     }
     //!\}
+    /*!\brief                              Construct from begin and end iterators of a given range over
+    *                                      std::totally_ordered values, and the number of values per window.
+    * /param[in] it_start                  Iterator pointing to the first position of the std::totally_ordered range.
+    * /param[in] it_end                    Iterator pointing to the last position of the std::totally_ordered range.
+    * /param[in] it_start2                 Iterator pointing to the first position of the second
+                                           std::totally_ordered range.
+    * /param[in] window_values_size        The number of values in one window.
+    *
+    * \details
+    *
+    * Looks at the number of values per window in two ranges, returns the smallest between both as minimiser and
+    * shifts then by one to repeat this action. If a minimiser in consecutive windows is the same, it is returned only
+    * once.
+    *
+    */
+    window_iterator(it_t it_start, sentinel_t it_end, it_t2 it_start2, uint32_t window_values_size) :
+    second{true}, urange_end{it_end}, window_right{it_start}, window_right2{it_start2}
+    {
+        if (window_values_size > std::ranges::distance(window_right, urange_end))
+            window_values_size = std::ranges::distance(window_right, urange_end);
+        if (window_right != urange_end)
+            window_first_two(window_values_size);
+    }
+    //!\}
 
     //!\anchor window_iterator_comparison
     //!\name Comparison operators
@@ -397,11 +424,20 @@ private:
     //!brief Iterator to last element in range.
     sentinel_t first_range_end;
 
+    //!brief True, if second range is given.
+    bool second;
+
+    //!brief Iterator to last element in range.
+    sentinel_t urange_end;
+
     //!\brief Iterator to the rightmost value of one window.
     first_it_t window_right;
 
     //!\brief Iterator to the rightmost value of one window of the second range.
     second_it_t second_window_right;
+
+    //!\brief Iterator to the rightmost value of one window of the second range.
+    it_t2 window_right2;
 
     //!\brief Stored values per window. It is necessary to store them, because a shift can remove the current minimiser.
     std::deque<value_type> window_values;
@@ -490,6 +526,41 @@ private:
             minimiser_value = new_value;
             return true;
         }
+
+        return false;
+    }
+
+    //!\brief Calculates the next minimiser value when two ranges are given.
+    // For the following windows, we remove the first window value (is now not in window_values) and add the new
+    // value that results from the window shifting.
+    bool next_minimiser_two()
+    {
+        std::ranges::advance(window_right, 1);
+        std::ranges::advance(window_right2, 1);
+        if (window_right == urange_end)
+            return true;
+
+        uint64_t new_value = *window_right;
+        if (*window_right2 < new_value)
+            new_value = *window_right2;
+
+        if (minimiser_value == *(std::begin(window_values)))
+        {
+            window_values.pop_front();
+            window_values.push_back(new_value);
+            minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
+            return true;
+        }
+
+        window_values.pop_front();
+        window_values.push_back(new_value);
+
+        if (new_value < minimiser_value)
+        {
+            minimiser_value = new_value;
+            return true;
+        }
+
 
         return false;
     }
