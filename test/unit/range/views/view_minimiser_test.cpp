@@ -9,7 +9,6 @@
 #include <list>
 #include <type_traits>
 
-#include <seqan3/core/debug_stream.hpp>
 #include <seqan3/alphabet/nucleotide/dna4.hpp>
 #include <seqan3/range/container/bitcompressed_vector.hpp>
 #include <seqan3/range/views/complement.hpp>
@@ -62,28 +61,16 @@ template <typename T>
 class minimiser_view_properties_test: public ::testing::Test { };
 
 using underlying_range_types = ::testing::Types<std::vector<seqan3::dna4>,
-                                                std::vector<seqan3::dna4> const>;
+                                                std::vector<seqan3::dna4> const,
                                                 // Can be commented in as soon as #1743 is solved
                                                 //seqan3::bitcompressed_vector<seqan3::dna4>,
                                                 //seqan3::bitcompressed_vector<seqan3::dna4> const,
                                                 // Can be commented in as soon as #1719 is merged
                                                 //std::list<seqan3::dna4>,
                                                 //std::list<seqan3::dna4> const,
+                                                std::forward_list<seqan3::dna4>,
+                                                std::forward_list<seqan3::dna4> const>;
 TYPED_TEST_SUITE(minimiser_view_properties_test, underlying_range_types, );
-
-template <typename T>
-class minimiser_view_properties_test_no_rev: public ::testing::Test { };
-
-using underlying_range_types_no_rev = ::testing::Types<std::vector<seqan3::dna4>,
-                                                       std::vector<seqan3::dna4> const,
-                                                       seqan3::bitcompressed_vector<seqan3::dna4>,
-                                                       seqan3::bitcompressed_vector<seqan3::dna4> const,
-                                                       std::list<seqan3::dna4>,
-                                                       std::list<seqan3::dna4> const,
-                                                       std::forward_list<seqan3::dna4>,
-                                                       std::forward_list<seqan3::dna4> const>;
-
-TYPED_TEST_SUITE(minimiser_view_properties_test_no_rev, underlying_range_types_no_rev, );
 
 class minimiser_test : public ::testing::Test
 {
@@ -112,23 +99,7 @@ TYPED_TEST(minimiser_view_properties_test, concepts)
 {
     TypeParam text{'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4, 'C'_dna4, 'G'_dna4, 'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4,
                 'T'_dna4, 'T'_dna4, 'A'_dna4, 'G'_dna4}; // ACGTCGACGTTTAG
-    auto v2 = text | kmer_view | seqan3::views::minimiser(5, text | rev_kmer_view);
-    EXPECT_TRUE(std::ranges::input_range<decltype(v2)>);
-    EXPECT_TRUE(std::ranges::forward_range<decltype(v2)>);
-    EXPECT_FALSE(std::ranges::bidirectional_range<decltype(v2)>);
-    EXPECT_FALSE(std::ranges::random_access_range<decltype(v2)>);
-    EXPECT_TRUE(std::ranges::view<decltype(v2)>);
-    EXPECT_FALSE(std::ranges::sized_range<decltype(v2)>);
-    EXPECT_FALSE(std::ranges::common_range<decltype(v2)>);
-    EXPECT_EQ(seqan3::const_iterable_range<decltype((text | rev_kmer_view))>,
-              seqan3::const_iterable_range<decltype(v2)>);
-    EXPECT_FALSE((std::ranges::output_range<decltype(v2), size_t>));
-}
 
-TYPED_TEST(minimiser_view_properties_test_no_rev, concepts)
-{
-    TypeParam text{'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4, 'C'_dna4, 'G'_dna4, 'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4,
-                'T'_dna4, 'T'_dna4, 'A'_dna4, 'G'_dna4}; // ACGTCGACGTTTAG
     auto v = text | kmer_view | minimiser_no_rev_view;
     EXPECT_TRUE(std::ranges::input_range<decltype(v)>);
     EXPECT_TRUE(std::ranges::forward_range<decltype(v)>);
@@ -139,9 +110,24 @@ TYPED_TEST(minimiser_view_properties_test_no_rev, concepts)
     EXPECT_FALSE(std::ranges::common_range<decltype(v)>);
     EXPECT_TRUE(seqan3::const_iterable_range<decltype(v)>);
     EXPECT_FALSE((std::ranges::output_range<decltype(v), size_t>));
+
+    if constexpr (std::ranges::bidirectional_range<TypeParam>) // excludes forward_list
+    {
+        auto v2 = text | kmer_view | seqan3::views::minimiser(5, text | rev_kmer_view);
+        EXPECT_TRUE(std::ranges::input_range<decltype(v2)>);
+        EXPECT_TRUE(std::ranges::forward_range<decltype(v2)>);
+        EXPECT_FALSE(std::ranges::bidirectional_range<decltype(v2)>);
+        EXPECT_FALSE(std::ranges::random_access_range<decltype(v2)>);
+        EXPECT_TRUE(std::ranges::view<decltype(v2)>);
+        EXPECT_FALSE(std::ranges::sized_range<decltype(v2)>);
+        EXPECT_FALSE(std::ranges::common_range<decltype(v2)>);
+        EXPECT_EQ(seqan3::const_iterable_range<decltype((text | rev_kmer_view))>,
+                  seqan3::const_iterable_range<decltype(v2)>);
+        EXPECT_FALSE((std::ranges::output_range<decltype(v2), size_t>));
+    }
 }
 
-TYPED_TEST(minimiser_view_properties_test_no_rev, different_inputs_kmer_hash)
+TYPED_TEST(minimiser_view_properties_test, different_inputs_kmer_hash)
 {
     TypeParam text{'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4, 'C'_dna4, 'G'_dna4, 'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4,
                 'T'_dna4, 'T'_dna4, 'A'_dna4, 'G'_dna4}; // ACGTCGACGTTTAG
@@ -149,8 +135,16 @@ TYPED_TEST(minimiser_view_properties_test_no_rev, different_inputs_kmer_hash)
     result_t gapped{3, 5, 3, 2, 1};                      // A--T, C--C, A--T, a--g, a--c - "-" for gap
     result_t ungapped_no_rev{27, 97, 27};                // ACGT, CGAC, ACGT
     result_t gapped_no_rev{3, 5, 3};                     // A--T, C--C, A--T - "-" for gap
-    EXPECT_RANGE_EQ(ungapped_no_rev, text | kmer_view | minimiser_view);
-    EXPECT_RANGE_EQ(gapped_no_rev, text | gapped_kmer_view | minimiser_view);
+    EXPECT_RANGE_EQ(ungapped_no_rev, text | kmer_view | minimiser_no_rev_view);
+    EXPECT_RANGE_EQ(gapped_no_rev, text | gapped_kmer_view | minimiser_no_rev_view);
+
+    if constexpr (std::ranges::bidirectional_range<TypeParam>) // excludes forward_list
+    {
+        EXPECT_EQ(ungapped, text | kmer_view | seqan3::views::minimiser(5, text | rev_kmer_view)
+                                 | seqan3::views::to<result_t>);
+        EXPECT_EQ(gapped, text | gapped_kmer_view | seqan3::views::minimiser(5, text | rev_gapped_kmer_view)
+                               | seqan3::views::to<result_t>);
+    }
 }
 
 TEST_F(minimiser_test, ungapped_kmer_hash)
