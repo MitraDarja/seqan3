@@ -40,7 +40,7 @@ static constexpr auto rev_gapped_kmer_view = seqan3::views::complement | std::vi
 static constexpr auto minimiser_view1 = seqan3::views::minimiser(1); // kmer_size == window_size
 static constexpr auto minimiser_no_rev_view = seqan3::views::minimiser(5);
 
-/*template <>
+template <>
 struct iterator_fixture<iterator_type> : public ::testing::Test
 {
     using iterator_tag = std::forward_iterator_tag;
@@ -55,7 +55,7 @@ struct iterator_fixture<iterator_type> : public ::testing::Test
 };
 
 using test_type = ::testing::Types<iterator_type>;
-INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type, );*/
+INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type, );
 
 template <typename T>
 class minimiser_view_properties_test: public ::testing::Test { };
