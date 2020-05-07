@@ -40,7 +40,7 @@ static constexpr auto rev_gapped_kmer_view = seqan3::views::complement | std::vi
 static constexpr auto minimiser_view1 = seqan3::views::minimiser(1); // kmer_size == window_size
 static constexpr auto minimiser_no_rev_view = seqan3::views::minimiser(5);
 
-template <>
+/*template <>
 struct iterator_fixture<iterator_type> : public ::testing::Test
 {
     using iterator_tag = std::forward_iterator_tag;
@@ -55,7 +55,7 @@ struct iterator_fixture<iterator_type> : public ::testing::Test
 };
 
 using test_type = ::testing::Types<iterator_type>;
-INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type, );
+INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type, );*/
 
 template <typename T>
 class minimiser_view_properties_test: public ::testing::Test { };
@@ -65,9 +65,8 @@ using underlying_range_types = ::testing::Types<std::vector<seqan3::dna4>,
                                                 // Can be commented in as soon as #1743 is solved
                                                 //seqan3::bitcompressed_vector<seqan3::dna4>,
                                                 //seqan3::bitcompressed_vector<seqan3::dna4> const,
-                                                // Can be commented in as soon as #1719 is merged
-                                                //std::list<seqan3::dna4>,
-                                                //std::list<seqan3::dna4> const,
+                                                std::list<seqan3::dna4>,
+                                                std::list<seqan3::dna4> const,
                                                 std::forward_list<seqan3::dna4>,
                                                 std::forward_list<seqan3::dna4> const>;
 TYPED_TEST_SUITE(minimiser_view_properties_test, underlying_range_types, );
@@ -92,7 +91,6 @@ protected:
     result_t result3_start{1};                    // For start at second A, ungapped and gapped the same
     result_t result3_ungapped_no_rev_start{27};   // For start at second A
     result_t result3_gapped_no_rev_start{3};      // For start at second A
-
 };
 
 TYPED_TEST(minimiser_view_properties_test, concepts)
@@ -140,75 +138,54 @@ TYPED_TEST(minimiser_view_properties_test, different_inputs_kmer_hash)
 
     if constexpr (std::ranges::bidirectional_range<TypeParam>) // excludes forward_list
     {
-        EXPECT_EQ(ungapped, text | kmer_view | seqan3::views::minimiser(5, text | rev_kmer_view)
-                                 | seqan3::views::to<result_t>);
-        EXPECT_EQ(gapped, text | gapped_kmer_view | seqan3::views::minimiser(5, text | rev_gapped_kmer_view)
-                               | seqan3::views::to<result_t>);
+        EXPECT_RANGE_EQ(ungapped, text | kmer_view | seqan3::views::minimiser(5, text | rev_kmer_view));
+        EXPECT_RANGE_EQ(gapped, text | gapped_kmer_view | seqan3::views::minimiser(5, text | rev_gapped_kmer_view));
     }
 }
 
 TEST_F(minimiser_test, ungapped_kmer_hash)
 {
-    EXPECT_RANGE_EQ(result1, text1 | kmer_view | minimiser_view);
-    EXPECT_THROW(text1_short | kmer_view | minimiser_view2, std::invalid_argument);
-    auto empty_view = too_short_text | kmer_view | minimiser_view;
-    EXPECT_TRUE(std::ranges::empty(empty_view));
-    EXPECT_RANGE_EQ(result3_ungapped_no_rev, text3 | kmer_view | minimiser_view);
-
-    EXPECT_EQ(result1, text1 | kmer_view | seqan3::views::minimiser(5, text1 | rev_kmer_view)
-                             | seqan3::views::to<result_t>);
-    EXPECT_EQ(result1, text1 | kmer_view | minimiser_no_rev_view | seqan3::views::to<result_t>);
+    EXPECT_RANGE_EQ(result1, text1 | kmer_view | seqan3::views::minimiser(5, text1 | rev_kmer_view));
+    EXPECT_RANGE_EQ(result1, text1 | kmer_view | minimiser_no_rev_view);
     EXPECT_THROW(text1_short | kmer_view | minimiser_view1, std::invalid_argument);
     auto empty_view = too_short_text | kmer_view | seqan3::views::minimiser(5, too_short_text | rev_kmer_view);
     EXPECT_TRUE(std::ranges::empty(empty_view));
     auto empty_view2 = too_short_text | kmer_view | minimiser_no_rev_view;
     EXPECT_TRUE(std::ranges::empty(empty_view2));
-    EXPECT_EQ(result3_ungapped, text3 | kmer_view | seqan3::views::minimiser(5, text3 | rev_kmer_view)
-                                      | seqan3::views::to<result_t>);
-    EXPECT_EQ(result3_ungapped_no_rev, text3 | kmer_view | minimiser_no_rev_view | seqan3::views::to<result_t>);
+    EXPECT_RANGE_EQ(result3_ungapped, text3 | kmer_view | seqan3::views::minimiser(5, text3 | rev_kmer_view));
+    EXPECT_RANGE_EQ(result3_ungapped_no_rev, text3 | kmer_view | minimiser_no_rev_view);
 
 }
 
 TEST_F(minimiser_test, gapped_kmer_hash)
 {
-    EXPECT_RANGE_EQ(result1, text1 | gapped_kmer_view | minimiser_view);
-    EXPECT_THROW(text1_short | gapped_kmer_view | minimiser_view2, std::invalid_argument);
-    auto empty_view = too_short_text | gapped_kmer_view | minimiser_view;
-    EXPECT_TRUE(std::ranges::empty(empty_view));
-    EXPECT_RANGE_EQ(result3_gapped_no_rev, text3 | gapped_kmer_view | minimiser_view);
-
-    EXPECT_EQ(result1, text1 | gapped_kmer_view | seqan3::views::minimiser(5, text1 | rev_gapped_kmer_view)
-                             | seqan3::views::to<result_t>);
-    EXPECT_EQ(result1, text1 | gapped_kmer_view | minimiser_no_rev_view | seqan3::views::to<result_t>);
+    EXPECT_RANGE_EQ(result1, text1 | gapped_kmer_view | seqan3::views::minimiser(5, text1 | rev_gapped_kmer_view));
+    EXPECT_RANGE_EQ(result1, text1 | gapped_kmer_view | minimiser_no_rev_view);
     EXPECT_THROW(text1_short | gapped_kmer_view | minimiser_view1, std::invalid_argument);
     auto empty_view = too_short_text | gapped_kmer_view
                                      | seqan3::views::minimiser(5, too_short_text | rev_gapped_kmer_view);
     EXPECT_TRUE(std::ranges::empty(empty_view));
     auto empty_view2 = too_short_text | gapped_kmer_view | minimiser_no_rev_view;
     EXPECT_TRUE(std::ranges::empty(empty_view2));
-    EXPECT_EQ(result3_gapped, text3 | gapped_kmer_view | seqan3::views::minimiser(5, text3 | rev_gapped_kmer_view)
-                                    | seqan3::views::to<result_t>);
-    EXPECT_EQ(result3_gapped_no_rev, text3 | gapped_kmer_view | minimiser_no_rev_view | seqan3::views::to<result_t>);
+    EXPECT_RANGE_EQ(result3_gapped, text3 | gapped_kmer_view
+                                          | seqan3::views::minimiser(5, text3 | rev_gapped_kmer_view));
+    EXPECT_RANGE_EQ(result3_gapped_no_rev, text3 | gapped_kmer_view | minimiser_no_rev_view);
 }
 
 TEST_F(minimiser_test, window_too_big)
 {
     EXPECT_RANGE_EQ(result1_short, text1 | kmer_view | seqan3::views::minimiser(20));
     EXPECT_RANGE_EQ(result1_short, text1 | gapped_kmer_view | seqan3::views::minimiser(20));
-
-    EXPECT_EQ(result1_short, text1 | kmer_view | seqan3::views::minimiser(20) | seqan3::views::to<result_t>);
-    EXPECT_EQ(result1_short, text1 | gapped_kmer_view | seqan3::views::minimiser(20) | seqan3::views::to<result_t>);
-    EXPECT_EQ(result1_short, text1 | kmer_view | seqan3::views::minimiser(20, text1 | rev_kmer_view)
-                                   | seqan3::views::to<result_t>);
-    EXPECT_EQ(result1_short, text1 | gapped_kmer_view | seqan3::views::minimiser(20, text1 | rev_gapped_kmer_view)
-                                   | seqan3::views::to<result_t>);
+    EXPECT_RANGE_EQ(result1_short, text1 | kmer_view | seqan3::views::minimiser(20, text1 | rev_kmer_view));
+    EXPECT_RANGE_EQ(result1_short, text1 | gapped_kmer_view
+                                         | seqan3::views::minimiser(20, text1 | rev_gapped_kmer_view));
 }
 
 TEST_F(minimiser_test, combinability)
 {
     auto stop_at_t = seqan3::views::take_until([] (seqan3::dna4 const x) { return x == 'T'_dna4; });
-    EXPECT_RANGE_EQ(result3_ungapped_no_rev_stop, text3 | stop_at_t | kmer_view | minimiser_view);
-    EXPECT_RANGE_EQ(result3_gapped_no_rev_stop, text3 | stop_at_t | gapped_kmer_view | minimiser_view);
+    EXPECT_RANGE_EQ(result3_ungapped_stop, text3 | stop_at_t | kmer_view | minimiser_no_rev_view);
+    EXPECT_RANGE_EQ(result3_gapped_stop, text3 | stop_at_t | gapped_kmer_view | minimiser_no_rev_view);
 
     std::vector<seqan3::dna4> textt{"ACGGCGACGTTTAG"_dna4};
     // Can be commented in, once #1750 is merged
@@ -220,10 +197,8 @@ TEST_F(minimiser_test, combinability)
                                          | seqan3::views::to<result_t>);*/
 
     auto start_at_a = seqan3::views::drop(6);
-    EXPECT_EQ(result3_start, text3 | start_at_a | kmer_view
-                                   | seqan3::views::minimiser(5, text3 | start_at_a | rev_kmer_view)
-                                   | seqan3::views::to<result_t>);
-    EXPECT_EQ(result3_start, text3 | start_at_a | gapped_kmer_view
-                                   | seqan3::views::minimiser(5, text3 | start_at_a | rev_gapped_kmer_view)
-                                   | seqan3::views::to<result_t>);
+    EXPECT_RANGE_EQ(result3_start, text3 | start_at_a | kmer_view
+                                   | seqan3::views::minimiser(5, text3 | start_at_a | rev_kmer_view));
+    EXPECT_RANGE_EQ(result3_start, text3 | start_at_a | gapped_kmer_view
+                                   | seqan3::views::minimiser(5, text3 | start_at_a | rev_gapped_kmer_view));
 }
