@@ -47,6 +47,20 @@ static constexpr auto rev_gapped_kmer_view = seqan3::views::complement | std::vi
                                                                        | std::views::reverse;
 static constexpr auto minimiser_view1 = seqan3::views::minimiser(1); // kmer_size == window_size
 static constexpr auto minimiser_no_rev_view = seqan3::views::minimiser(5);
+/*
+template <>
+struct iterator_fixture<iterator_type> : public ::testing::Test
+{
+    using iterator_tag = std::forward_iterator_tag;
+    static constexpr bool const_iterable = true;
+
+    seqan3::dna4_vector text{"ACGGCGACGTTTAG"_dna4};
+    decltype(seqan3::views::kmer_hash(text, seqan3::ungapped{4})) vec = text | rev_kmer_view;
+    result_t expected_range{26, 97, 27};
+
+    decltype(seqan3::views::minimiser(seqan3::views::kmer_hash(text, seqan3::ungapped{4}), 5, text | rev_kmer_view))
+    test_range = seqan3::views::minimiser(vec, 5, text | rev_kmer_view);
+};
 
 /*template <>
 struct iterator_fixture<iterator_type> : public ::testing::Test
@@ -92,9 +106,6 @@ using underlying_range_types = ::testing::Types<std::vector<seqan3::dna4>,
                                                 std::list<seqan3::dna4> const,
                                                 std::forward_list<seqan3::dna4>,
                                                 std::forward_list<seqan3::dna4> const>;
-<<<<<<< HEAD
-=======
->>>>>>> [TEST] Remove to function
 TYPED_TEST_SUITE(minimiser_view_properties_test, underlying_range_types, );
 
 template <typename T>
@@ -131,9 +142,6 @@ protected:
     result_t result3_start{1};                    // For start at second A, ungapped and gapped the same
     result_t result3_ungapped_no_rev_start{27};   // For start at second A
     result_t result3_gapped_no_rev_start{3};      // For start at second A
-<<<<<<< HEAD
-=======
->>>>>>> [TEST] Remove to function
 };
 
 TYPED_TEST(minimiser_view_properties_test, concepts)
@@ -152,6 +160,20 @@ TYPED_TEST(minimiser_view_properties_test, concepts)
     EXPECT_EQ(seqan3::const_iterable_range<decltype((text | kmer_view))>,
               seqan3::const_iterable_range<decltype(v)>);
     EXPECT_FALSE((std::ranges::output_range<decltype(v), size_t>));
+
+    EXPECT_TRUE(std::ranges::input_range<std::remove_const_t<decltype(v)>>);
+    EXPECT_TRUE(std::ranges::input_range<decltype(v) const>);
+    if constexpr (std::ranges::bidirectional_range<TypeParam>) // excludes forward_list
+    {EXPECT_TRUE(std::input_iterator<ranges::iterator_t<decltype(v) const>>);}
+
+    EXPECT_TRUE((std::ranges::forward_range<std::remove_const_t<decltype(v)>>       == std::ranges::forward_range<decltype(v) const>));
+    EXPECT_TRUE(    (std::ranges::bidirectional_range<std::remove_const_t<decltype(v)>> == std::ranges::bidirectional_range<decltype(v) const>) );
+    EXPECT_TRUE((std::ranges::random_access_range<std::remove_const_t<decltype(v)>> == std::ranges::random_access_range<decltype(v) const>));
+    /* std::ranges::input_range<std::remove_const_t<type>> &&
+    std::ranges::input_range<type const> &&
+    (std::ranges::forward_range<std::remove_const_t<type>>       == std::ranges::forward_range<type const>) &&
+    (std::ranges::bidirectional_range<std::remove_const_t<type>> == std::ranges::bidirectional_range<type const>) &&
+    (std::ranges::random_access_range<std::remove_const_t<type>> == std::ranges::random_access_range<type const>);*/
 
     if constexpr (std::ranges::bidirectional_range<TypeParam>) // excludes forward_list
     {
@@ -191,13 +213,13 @@ TEST_F(minimiser_test, ungapped_kmer_hash)
 {
     EXPECT_RANGE_EQ(result1, text1 | kmer_view | seqan3::views::minimiser(5, text1 | rev_kmer_view));
     EXPECT_RANGE_EQ(result1, text1 | kmer_view | minimiser_no_rev_view);
-    EXPECT_THROW(text1_short | kmer_view | minimiser_view1, std::invalid_argument);
+    /*EXPECT_THROW(text1_short | kmer_view | minimiser_view1, std::invalid_argument);
     auto empty_view = too_short_text | kmer_view | seqan3::views::minimiser(5, too_short_text | rev_kmer_view);
     EXPECT_TRUE(std::ranges::empty(empty_view));
     auto empty_view2 = too_short_text | kmer_view | minimiser_no_rev_view;
     EXPECT_TRUE(std::ranges::empty(empty_view2));
     EXPECT_RANGE_EQ(result3_ungapped, text3 | kmer_view | seqan3::views::minimiser(5, text3 | rev_kmer_view));
-    EXPECT_RANGE_EQ(result3_ungapped_no_rev, text3 | kmer_view | minimiser_no_rev_view);
+    EXPECT_RANGE_EQ(result3_ungapped_no_rev, text3 | kmer_view | minimiser_no_rev_view);*/
 
     EXPECT_EQ(result1, text1 | kmer_view | seqan3::views::minimiser(5, text1 | rev_kmer_view)
                              | seqan3::views::to<result_t>);
@@ -220,7 +242,6 @@ TEST_F(minimiser_test, gapped_kmer_hash)
     auto empty_view = too_short_text | gapped_kmer_view
                                      | seqan3::views::minimiser(5, too_short_text | rev_gapped_kmer_view);
     EXPECT_TRUE(std::ranges::empty(empty_view));
-<<<<<<< HEAD
     auto empty_view2 = too_short_text | gapped_kmer_view | minimiser_no_rev_view;
     EXPECT_TRUE(std::ranges::empty(empty_view2));
     EXPECT_RANGE_EQ(result3_gapped, text3 | gapped_kmer_view
@@ -246,11 +267,6 @@ TEST_F(minimiser_test, window_too_big)
     EXPECT_RANGE_EQ(result1_short, text1 | kmer_view | seqan3::views::minimiser(20, text1 | rev_kmer_view));
     EXPECT_RANGE_EQ(result1_short, text1 | gapped_kmer_view
                                          | seqan3::views::minimiser(20, text1 | rev_gapped_kmer_view));
-=======
-    EXPECT_RANGE_EQ(result1_short, text1 | kmer_view | seqan3::views::minimiser(20, text1 | rev_kmer_view));
-    EXPECT_RANGE_EQ(result1_short, text1 | gapped_kmer_view
-                                         | seqan3::views::minimiser(20, text1 | rev_gapped_kmer_view));
->>>>>>> [TEST] Remove to function
 }
 
 TEST_F(minimiser_test, combinability)

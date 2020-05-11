@@ -278,6 +278,20 @@ public:
         window_values{std::move(it.window_values)}
     { }
 
+    //!\brief Allow iterator on a const range to be constructible from an iterator over a non-const range.
+    /*template <typename urng3_t, typename urng4_t>
+    //!\cond
+        requires std::same_as<std::remove_const_t<urng_t>, urng3_t> &&
+                 std::same_as<std::remove_const_t<urng2_t>, urng4_t>
+     //!\endcond
+    window_iterator(window_iterator<urng3_t, urng4_t> it) :
+        minimiser_value(std::move(it.minimiser_value)),
+        urange_end{std::move(it.urange_end)},
+        window_right{std::move(it.window_right)},
+        //window_right2{std::move(it.window_right2},
+        window_values{std::move(it.window_values)}
+    { }*/
+
     /*!\brief                              Construct from begin and end iterators of a given range over
     *                                      std::totally_ordered values, and the number of values per window.
     * /param[in] it_start                  Iterator pointing to the first position of the first
@@ -321,7 +335,7 @@ public:
     *
     */
     window_iterator(it_t it_start, sentinel_t it_end, it_t2 it_start2, uint32_t window_values_size) :
-    second{true}, urange_end{it_end}, window_right{it_start}, window_right2{it_start2}
+    urange_end{it_end}, window_right{it_start}, window_right2{it_start2}
     {
         if (window_values_size > std::ranges::distance(window_right, urange_end))
             window_values_size = std::ranges::distance(window_right, urange_end);
@@ -423,9 +437,6 @@ private:
 
     //!brief Iterator to last element in range.
     sentinel_t first_range_end;
-
-    //!brief True, if second range is given.
-    bool second;
 
     //!brief Iterator to last element in range.
     sentinel_t urange_end;
@@ -534,6 +545,9 @@ private:
     // For the following windows, we remove the first window value (is now not in window_values) and add the new
     // value that results from the window shifting.
     bool next_minimiser_two()
+    //!\cond
+    requires !std::same_as<it_t2, seqan3::detail::empty_type>
+    //!\endcond
     {
         std::ranges::advance(window_right, 1);
         std::ranges::advance(window_right2, 1);
@@ -560,7 +574,6 @@ private:
             minimiser_value = new_value;
             return true;
         }
-
 
         return false;
     }
