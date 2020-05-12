@@ -135,8 +135,11 @@ TYPED_TEST(minimiser_view_properties_test, concepts)
 
     EXPECT_TRUE(std::ranges::input_range<std::remove_const_t<decltype(v)>>);
     EXPECT_TRUE(std::ranges::input_range<decltype(v) const>);
+
     if constexpr (std::ranges::bidirectional_range<TypeParam>) // excludes forward_list
-    {EXPECT_TRUE(std::input_iterator<ranges::iterator_t<decltype(v) const>>);}
+    {
+        EXPECT_TRUE(std::input_iterator<std::ranges::iterator_t<decltype(v) const>>);
+    }
 
     EXPECT_TRUE((std::ranges::forward_range<std::remove_const_t<decltype(v)>>       == std::ranges::forward_range<decltype(v) const>));
     EXPECT_TRUE(    (std::ranges::bidirectional_range<std::remove_const_t<decltype(v)>> == std::ranges::bidirectional_range<decltype(v) const>) );
