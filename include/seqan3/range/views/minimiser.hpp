@@ -157,7 +157,7 @@ public:
     //!\copydoc begin()
     auto cbegin() const
     //!\cond
-        requires seqan3::const_iterable_range<urng_t> && seqan3::const_iterable_range<urng2_t>
+        requires seqan3::const_iterable_range<urng_t>
     //!\endcond
     {
         return begin();
@@ -262,6 +262,20 @@ public:
     template <typename urng3_t, typename urng4_t>
     //!\cond
         requires std::same_as<std::remove_const_t<urng_t>, urng3_t> &&
+                 std::same_as<seqan3::detail::empty_type, urng4_t>
+     //!\endcond
+    window_iterator(window_iterator<urng3_t, seqan3::detail::empty_type> it) :
+        minimiser_value(std::move(it.minimiser_value)),
+        urange_end{std::move(it.urange_end)},
+        window_right{std::move(it.window_right)},
+        //window_right2{std::move(it.window_right2},
+        window_values{std::move(it.window_values)}
+    { }
+
+    //!\brief Allow iterator on a const range to be constructible from an iterator over a non-const range.
+    /*template <typename urng3_t, typename urng4_t>
+    //!\cond
+        requires std::same_as<std::remove_const_t<urng_t>, urng3_t> &&
                  std::same_as<std::remove_const_t<urng2_t>, urng4_t>
      //!\endcond
     window_iterator(window_iterator<urng3_t, urng4_t> it) :
@@ -270,7 +284,7 @@ public:
         window_right{std::move(it.window_right)},
         //window_right2{std::move(it.window_right2},
         window_values{std::move(it.window_values)}
-    { }
+    { }*/
 
     /*!\brief                              Construct from begin and end iterators of a given range over
     *                                      std::totally_ordered values, and the number of values per window.
