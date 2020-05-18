@@ -26,14 +26,15 @@ using seqan3::operator""_dna4;
 using seqan3::operator""_shape;
 using result_t = std::vector<size_t>;
 using iterator_type = std::ranges::iterator_t< decltype(std::declval<seqan3::dna4_vector&>()
+                                                        | seqan3::views::kmer_hash(seqan3::ungapped{4})
+                                                        | seqan3::views::minimiser(5,
+                                                            std::declval<seqan3::dna4_vector&>()
+                                                            | seqan3::views::complement | std::views::reverse
+                                                            | seqan3::views::kmer_hash(seqan3::ungapped{4})
+                                                            | std::views::reverse))>;
+using iterator_type_no_rev = std::ranges::iterator_t< decltype(std::declval<seqan3::dna4_vector&>()
                                                                | seqan3::views::kmer_hash(seqan3::ungapped{4})
                                                                | seqan3::views::minimiser(5))>;
-/*using iterator_type = std::ranges::iterator_t< decltype(std::declval<seqan3::dna4_vector&>()
-                                                               | seqan3::views::kmer_hash(seqan3::ungapped{4})
-                                                               | seqan3::views::minimiser(5,
-                                                               std::declval<seqan3::dna4_vector&>()
-                                                                 | std::views::reverse,
-                                                                 | seqan3::views::kmer_hash(seqan3::ungapped{4})))>;*/
 
 static constexpr auto kmer_view = seqan3::views::kmer_hash(seqan3::ungapped{4});
 static constexpr auto rev_kmer_view = seqan3::views::complement | std::views::reverse
@@ -45,26 +46,28 @@ static constexpr auto rev_gapped_kmer_view = seqan3::views::complement | std::vi
                                                                        | std::views::reverse;
 static constexpr auto minimiser_view1 = seqan3::views::minimiser(1); // kmer_size == window_size
 static constexpr auto minimiser_no_rev_view = seqan3::views::minimiser(5);
-/*
+
 template <>
 struct iterator_fixture<iterator_type> : public ::testing::Test
 {
     using iterator_tag = std::forward_iterator_tag;
-    static constexpr bool const_iterable = true;
+    static constexpr bool const_iterable = false;
 
     seqan3::dna4_vector text{"ACGGCGACGTTTAG"_dna4};
-    decltype(seqan3::views::kmer_hash(text, seqan3::ungapped{4})) vec = text | rev_kmer_view;
-    result_t expected_range{26, 97, 27};
+    decltype(seqan3::views::kmer_hash(text, seqan3::ungapped{4})) vec = text | kmer_view;
+    result_t expected_range{26, 97, 27, 6, 1};
 
     decltype(seqan3::views::minimiser(seqan3::views::kmer_hash(text, seqan3::ungapped{4}), 5, text | rev_kmer_view))
     test_range = seqan3::views::minimiser(vec, 5, text | rev_kmer_view);
+
 };
 
 using test_type = ::testing::Types<iterator_type>;
-INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type, );*/
-/*
+INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type, );
+
+
 template <>
-struct iterator_fixture<iterator_type> : public ::testing::Test
+struct iterator_fixture<iterator_type_no_rev> : public ::testing::Test
 {
     using iterator_tag = std::forward_iterator_tag;
     static constexpr bool const_iterable = true;
@@ -77,8 +80,8 @@ struct iterator_fixture<iterator_type> : public ::testing::Test
     seqan3::views::minimiser(vec, 5);
 };
 
-using test_type = ::testing::Types<iterator_type>;
-INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type, );*/
+using test_type_no_rev = ::testing::Types<iterator_type_no_rev>;
+INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type_no_rev, );
 
 template <typename T>
 class minimiser_view_properties_test: public ::testing::Test { };
@@ -132,23 +135,6 @@ TYPED_TEST(minimiser_view_properties_test, concepts)
     EXPECT_EQ(seqan3::const_iterable_range<decltype((text | kmer_view))>,
               seqan3::const_iterable_range<decltype(v)>);
     EXPECT_FALSE((std::ranges::output_range<decltype(v), size_t>));
-
-    EXPECT_TRUE(std::ranges::input_range<std::remove_const_t<decltype(v)>>);
-    EXPECT_TRUE(std::ranges::input_range<decltype(v) const>);
-
-    if constexpr (std::ranges::bidirectional_range<TypeParam>) // excludes forward_list
-    {
-        EXPECT_TRUE(std::input_iterator<std::ranges::iterator_t<decltype(v) const>>);
-    }
-
-    EXPECT_TRUE((std::ranges::forward_range<std::remove_const_t<decltype(v)>>       == std::ranges::forward_range<decltype(v) const>));
-    EXPECT_TRUE(    (std::ranges::bidirectional_range<std::remove_const_t<decltype(v)>> == std::ranges::bidirectional_range<decltype(v) const>) );
-    EXPECT_TRUE((std::ranges::random_access_range<std::remove_const_t<decltype(v)>> == std::ranges::random_access_range<decltype(v) const>));
-    /* std::ranges::input_range<std::remove_const_t<type>> &&
-    std::ranges::input_range<type const> &&
-    (std::ranges::forward_range<std::remove_const_t<type>>       == std::ranges::forward_range<type const>) &&
-    (std::ranges::bidirectional_range<std::remove_const_t<type>> == std::ranges::bidirectional_range<type const>) &&
-    (std::ranges::random_access_range<std::remove_const_t<type>> == std::ranges::random_access_range<type const>);*/
 
     if constexpr (std::ranges::bidirectional_range<TypeParam>) // excludes forward_list
     {
