@@ -44,6 +44,9 @@ private:
     static_assert(std::ranges::forward_range<urng_t const>, "The minimiser_view only works on forward_ranges.");
     static_assert(std::totally_ordered<std::ranges::range_reference_t<urng_t>>,
                   "The reference type of the underlying range must model std::totally_ordered.");
+
+    static constexpr bool urange2_is_given = !std::same_as<urng2_t, std::ranges::empty_view<seqan3::detail::empty_type>>;
+
     //!\brief The underlying range.
     urng_t urange;
 
