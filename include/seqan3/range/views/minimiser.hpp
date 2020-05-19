@@ -16,6 +16,7 @@
 
 #include <range/v3/view/empty.hpp>
 
+#include <seqan3/core/detail/empty_type.hpp>
 #include <seqan3/core/type_traits/lazy.hpp>
 #include <seqan3/range/concept.hpp>
 #include <seqan3/range/views/detail.hpp>
