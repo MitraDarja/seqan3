@@ -62,10 +62,6 @@ struct iterator_fixture<iterator_type> : public ::testing::Test
 
 };
 
-using test_type = ::testing::Types<iterator_type>;
-INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type, );
-
-
 template <>
 struct iterator_fixture<iterator_type_no_rev> : public ::testing::Test
 {
@@ -80,8 +76,8 @@ struct iterator_fixture<iterator_type_no_rev> : public ::testing::Test
     seqan3::views::minimiser(vec, 5);
 };
 
-using test_type_no_rev = ::testing::Types<iterator_type_no_rev>;
-INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_type_no_rev, );
+using test_types = ::testing::Types<iterator_type, iterator_type_no_rev>;
+INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_types, );
 
 template <typename T>
 class minimiser_view_properties_test: public ::testing::Test { };
