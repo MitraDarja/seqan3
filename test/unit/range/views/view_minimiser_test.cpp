@@ -170,13 +170,13 @@ TEST_F(minimiser_test, ungapped_kmer_hash)
 {
     EXPECT_RANGE_EQ(result1, text1 | kmer_view | seqan3::views::minimiser(5, text1 | rev_kmer_view));
     EXPECT_RANGE_EQ(result1, text1 | kmer_view | minimiser_no_rev_view);
-    /*EXPECT_THROW(text1_short | kmer_view | minimiser_view1, std::invalid_argument);
+    EXPECT_THROW(text1_short | kmer_view | minimiser_view1, std::invalid_argument);
     auto empty_view = too_short_text | kmer_view | seqan3::views::minimiser(5, too_short_text | rev_kmer_view);
     EXPECT_TRUE(std::ranges::empty(empty_view));
     auto empty_view2 = too_short_text | kmer_view | minimiser_no_rev_view;
     EXPECT_TRUE(std::ranges::empty(empty_view2));
     EXPECT_RANGE_EQ(result3_ungapped, text3 | kmer_view | seqan3::views::minimiser(5, text3 | rev_kmer_view));
-    EXPECT_RANGE_EQ(result3_ungapped_no_rev, text3 | kmer_view | minimiser_no_rev_view);*/
+    EXPECT_RANGE_EQ(result3_ungapped_no_rev, text3 | kmer_view | minimiser_no_rev_view);
 
 }
 
@@ -212,12 +212,10 @@ TEST_F(minimiser_test, combinability)
 
     std::vector<seqan3::dna4> textt{"ACGGCGACGTTTAG"_dna4};
     // Can be commented in, once #1750 is merged
-    /*EXPECT_EQ(result3_ungapped_stop, text3 | stop_at_t | kmer_view
-                                           | seqan3::views::minimiser(5, text3 | stop_at_t | rev_kmer_view)
-                                           | seqan3::views::to<result_t>);
-    EXPECT_EQ(result3_gapped_stop, text3 | stop_at_t | gapped_kmer_view
-                                         | seqan3::views::minimiser(5, text3 | stop_at_t | rev_gapped_kmer_view)
-                                         | seqan3::views::to<result_t>);*/
+    /*EXPECT_RANGE_EQ(result3_ungapped_stop, text3 | stop_at_t | kmer_view
+                                             | seqan3::views::minimiser(5, text3 | stop_at_t | rev_kmer_view));
+    EXPECT_RANGE_EQ(result3_gapped_stop, text3 | stop_at_t | gapped_kmer_view
+                                         | seqan3::views::minimiser(5, text3 | stop_at_t | rev_gapped_kmer_view));*/
 
     auto start_at_a = seqan3::views::drop(6);
     EXPECT_RANGE_EQ(result3_start, text3 | start_at_a | kmer_view
