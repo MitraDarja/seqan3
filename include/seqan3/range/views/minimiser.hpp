@@ -521,8 +521,8 @@ private:
 template <std::ranges::viewable_range rng_t>
 minimiser_view(rng_t &&, uint32_t const & window_values_size) -> minimiser_view<std::ranges::all_view<rng_t>>;
 //!\brief A deduction guide for the view class template.
-template <std::ranges::viewable_range ddrng_t, std::ranges::viewable_range ddrng2_t>
-minimiser_view(ddrng_t &&, ddrng2_t &&, uint32_t const & window_values_size) -> minimiser_view<std::ranges::all_view<ddrng_t>, std::ranges::all_view<ddrng2_t>>;
+template <std::ranges::viewable_range rng_t, std::ranges::viewable_range rng2_t>
+minimiser_view(rng_t &&, rng2_t &&, uint32_t const & window_values_size) -> minimiser_view<std::ranges::all_view<rng_t>, std::ranges::all_view<rng2_t>>;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // minimiser_fn (adaptor definition)
@@ -545,12 +545,12 @@ struct minimiser_fn
      * \param[in] window_values_size    The number of values in one window.
      * \returns                         A range of converted values.
      */
-     template <std::ranges::range murng_t>
-     constexpr auto operator()(murng_t && urange, uint32_t const & window_values_size) const
+     template <std::ranges::range urng_t>
+     constexpr auto operator()(urng_t && urange, uint32_t const & window_values_size) const
      {
-         static_assert(std::ranges::viewable_range<murng_t>,
+         static_assert(std::ranges::viewable_range<urng_t>,
              "The range parameter to views::minimiser cannot be a temporary of a non-view range.");
-         static_assert(std::ranges::forward_range<murng_t>,
+         static_assert(std::ranges::forward_range<urng_t>,
              "The range parameter to views::minimiser must model std::ranges::forward_range.");
 
          if (window_values_size == 1) // Would just return urange without any changes
@@ -561,8 +561,8 @@ struct minimiser_fn
      }
 
      //!\brief Store the number of values in one window and the second range and return a range adaptor closure object.
-     template <std::ranges::range murng2_t>
-     constexpr auto operator()(uint32_t const & window_values_size, murng2_t && urange2) const
+     template <std::ranges::range urng2_t>
+     constexpr auto operator()(uint32_t const & window_values_size, urng2_t && urange2) const
      {
          return adaptor_from_functor{*this, window_values_size, urange2};
      }
@@ -576,12 +576,12 @@ struct minimiser_fn
      *                                  std::ranges::forward_range.
      * \returns                         A range of converted values.
      */
-    template <std::ranges::range murng_t, std::ranges::range murng2_t>
-    constexpr auto operator()(murng_t && urange, uint32_t const & window_values_size, murng2_t && urange2) const
+    template <std::ranges::range urng_t, std::ranges::range urng2_t>
+    constexpr auto operator()(urng_t && urange, uint32_t const & window_values_size, urng2_t && urange2) const
     {
-        static_assert(std::ranges::viewable_range<murng_t>,
+        static_assert(std::ranges::viewable_range<urng_t>,
             "The range parameter to views::minimiser cannot be a temporary of a non-view range.");
-        static_assert(std::ranges::forward_range<murng_t>,
+        static_assert(std::ranges::forward_range<urng_t>,
             "The range parameter to views::minimiser must model std::ranges::forward_range.");
 
         if (std::ranges::size(urange) != std::ranges::size(urange2))
