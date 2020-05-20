@@ -92,7 +92,7 @@ public:
         urange{std::views::all(std::forward<rng_t>(urange_))}, window_values_size{w_}
     {}
 
-    /*!\brief Construct from a view and a given number of values in one window.
+    /*!\brief Construct from two views and a given number of values in one window.
     * \param[in] urange_    The input range to process. Must model std::ranges::viewable_range and
     *                       std::ranges::forward_range.
     * \param[in] urange2_   The second input range to process. Must model std::ranges::viewable_range and
@@ -103,7 +103,7 @@ public:
         urange{std::move(urange_)}, urange2{std::move(urange2_)}, window_values_size{w_}
     {}
 
-    /*!\brief Construct from a non-view that can be view-wrapped and a given number of values in one window.
+    /*!\brief Construct from two non-views that can be view-wrapped and a given number of values in one window.
     * \param[in] urange_    The input range to process. Must model std::ranges::viewable_range and
     *                       std::ranges::forward_range.
     * \param[in] urange2_   The second input range to process. Must model std::ranges::viewable_range and
@@ -113,7 +113,9 @@ public:
     template <typename rng_t, typename rng2_t/* = std::ranges::empty_view<int>*/>
     //!\cond
      requires std::ranges::viewable_range<rng_t> &&
-              std::constructible_from<urng_t, ranges::ref_view<std::remove_reference_t<rng_t>>>
+              std::constructible_from<urng_t, ranges::ref_view<std::remove_reference_t<rng_t>>> &&
+              std::ranges::viewable_range<rng2_t> &&
+              std::constructible_from<urng2_t, ranges::ref_view<std::remove_reference_t<rng2_t>>>
     //!\endcond
     minimiser_view(rng_t && urange_, rng2_t && urange2_, uint32_t const w_) :
         urange{std::views::all(std::forward<rng_t>(urange_))},
