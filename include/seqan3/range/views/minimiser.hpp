@@ -145,9 +145,9 @@ public:
     auto begin()
     {
         return window_iterator<first_urange_t, second_urange_t>{std::ranges::begin(first_range),
-                                                std::ranges::end(first_range),
-                                                std::ranges::begin(second_range),
-                                                window_values_size};
+                                                                std::ranges::end(first_range),
+                                                                std::ranges::begin(second_range),
+                                                                window_values_size};
     }
 
     //!\copydoc begin()
@@ -157,9 +157,9 @@ public:
     //!\endcond
     {
         return window_iterator<first_urange_t const, second_urange_t const>{std::ranges::begin(first_range),
-                                                            std::ranges::end(first_range),
-                                                            std::ranges::begin(second_range),
-                                                            window_values_size};
+                                                                            std::ranges::end(first_range),
+                                                                            std::ranges::begin(second_range),
+                                                                            window_values_size};
     }
 
     //!\copydoc begin()
@@ -217,11 +217,11 @@ template <typename first_rng_t, typename second_rng_t>
 class minimiser_view<first_urange_t, second_urange_t>::window_iterator
 {
 private:
-    //!\brief The iterator type of the underlying range.
+    //!\brief The iterator type of the first underlying range.
     using first_it_t = std::ranges::iterator_t<first_rng_t>;
     //!\brief The iterator type of the second underlying range.
     using second_it_t = std::ranges::iterator_t<second_rng_t>;
-    //!\brief The sentinel type of the underlying range.
+    //!\brief The sentinel type of the first underlying range.
     using sentinel_t = std::ranges::sentinel_t<first_rng_t>;
 
     template <typename urng3_t, typename urng4_t>
@@ -272,7 +272,7 @@ public:
                  std::same_as<std::remove_const_t<second_urange_t>, urng4_t>
      //!\endcond
     window_iterator(window_iterator<urng3_t, urng4_t> it) :
-        minimiser_value(std::move(it.minimiser_value)),
+        minimiser_value{std::move(it.minimiser_value)},
         first_range_end{std::move(it.first_range_end)},
         window_right{std::move(it.window_right)},
         second_window_right{std::move(it.second_window_right)},
@@ -281,8 +281,10 @@ public:
 
     /*!\brief                              Construct from begin and end iterators of a given range over
     *                                      std::totally_ordered values, and the number of values per window.
-    * /param[in] it_start                  Iterator pointing to the first position of the std::totally_ordered range.
-    * /param[in] it_end                    Iterator pointing to the last position of the std::totally_ordered range.
+    * /param[in] it_start                  Iterator pointing to the first position of the first
+    *                                      std::totally_ordered range.
+    * /param[in] it_end                    Iterator pointing to the last position of the first
+    *                                      std::totally_ordered range.
     * /param[in] it_start2                 Iterator pointing to the first position of the second
                                            std::totally_ordered range.
     * /param[in] window_values_size        The number of values in one window.
@@ -429,7 +431,7 @@ private:
         minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
     }
 
-    //!\brief Calculates minimisers for the first window when two ranges are given
+    //!\brief Calculates minimisers for the first window when two ranges are given.
     void window_first(uint32_t window_values_size)
     //!\cond
         requires second_range_is_given
@@ -617,7 +619,7 @@ namespace seqan3::views
 
 /*!\brief                           Computes minimisers for a range of comparable values. A minimiser is the smallest
  *                                  value in a window.
- * \tparam first_urange_t           The type of the range being processed. See below for requirements. [template
+ * \tparam first_urange_t           The type of the first range being processed. See below for requirements. [template
  *                                  parameter is omitted in pipe notation]
  * \tparam second_urange_t          The type of the range second being processed. See below for requirements. [template
  *                                  parameter is omitted in pipe notation]
