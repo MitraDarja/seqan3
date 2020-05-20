@@ -433,7 +433,7 @@ private:
         if (*window_right2 < new_value)
             new_value = *window_right2;
 
-        for (uint32_t i = 0; (i < window_values_size - 1) ; i++)
+        for (uint32_t i = 0; i < window_values_size - 1; ++i)
         {
             window_values.push_back(new_value);
             std::ranges::advance(window_right,  1);
@@ -446,9 +446,12 @@ private:
         minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
     }
 
-    //!\brief Calculates the next minimiser value.
-    // For the following windows, we remove the first window value (is now not in window_values) and add the new
-    // value that results from the window shifting.
+    /*!\brief Calculates the next minimiser value.
+     *
+     * \details
+     * For the following windows, we remove the first window value (is now not in window_values) and add the new
+     * value that results from the window shifting.
+     */
     bool next_minimiser()
     //!\cond
         requires !urange2_is_given
@@ -459,7 +462,7 @@ private:
             return true;
 
         value_type new_value = *window_right;
-        if (minimiser_value == *(std::begin(window_values)))
+        if (minimiser_value == window_values.front())
         {
             window_values.pop_front();
             window_values.push_back(new_value);
@@ -479,24 +482,27 @@ private:
         return false;
     }
 
-    //!\brief Calculates the next minimiser value when two ranges are given.
-    // For the following windows, we remove the first window value (is now not in window_values) and add the new
-    // value that results from the window shifting.
+    /*!\brief Calculates the next minimiser value when two ranges are given.
+     *
+     * \details
+     * For the following windows, we remove the first window value (is now not in window_values) and add the new
+     * value that results from the window shifting.
+     */
     bool next_minimiser()
     //!\cond
         requires urange2_is_given
     //!\endcond
     {
-        std::ranges::advance(window_right, 1);
-        std::ranges::advance(window_right2, 1);
+        std::ranges::advance(window_right, 1u);
         if (window_right == urange_end)
             return true;
+        std::ranges::advance(window_right2, 1u);
 
         uint64_t new_value = *window_right;
         if (*window_right2 < new_value)
             new_value = *window_right2;
 
-        if (minimiser_value == *(std::begin(window_values)))
+        if (minimiser_value == window_values.front())
         {
             window_values.pop_front();
             window_values.push_back(new_value);
@@ -522,7 +528,8 @@ template <std::ranges::viewable_range rng_t>
 minimiser_view(rng_t &&, uint32_t const & window_values_size) -> minimiser_view<std::ranges::all_view<rng_t>>;
 //!\brief A deduction guide for the view class template.
 template <std::ranges::viewable_range rng_t, std::ranges::viewable_range rng2_t>
-minimiser_view(rng_t &&, rng2_t &&, uint32_t const & window_values_size) -> minimiser_view<std::ranges::all_view<rng_t>, std::ranges::all_view<rng2_t>>;
+minimiser_view(rng_t &&, rng2_t &&, uint32_t const & window_values_size) ->
+minimiser_view<std::ranges::all_view<rng_t>, std::ranges::all_view<rng2_t>>;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // minimiser_fn (adaptor definition)
@@ -554,7 +561,7 @@ struct minimiser_fn
              "The range parameter to views::minimiser must model std::ranges::forward_range.");
 
          if (window_values_size == 1) // Would just return urange without any changes
-             throw std::invalid_argument{"The chosen window_valzes_size is not valid. "
+             throw std::invalid_argument{"The chosen window_values_size is not valid. "
                                          "Please choose a value greater than 1 or use two ranges."};
 
          return minimiser_view{urange, window_values_size};
@@ -585,7 +592,7 @@ struct minimiser_fn
             "The range parameter to views::minimiser must model std::ranges::forward_range.");
 
         if (std::ranges::size(urange) != std::ranges::size(urange2))
-            throw std::invalid_argument{"The two ranges do not have the same size. "};
+            throw std::invalid_argument{"The two ranges do not have the same size."};
         return minimiser_view{urange, urange2, window_values_size};
     }
 };
