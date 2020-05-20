@@ -552,11 +552,11 @@ private:
         std::ranges::advance(window_right, 1u);
         if (window_right == first_range_end)
             return true;
-        std::ranges::advance(window_right2, 1u);
+        std::ranges::advance(second_window_right, 1u);
 
         uint64_t new_value = *window_right;
-        if (*window_right2 < new_value)
-            new_value = *window_right2;
+        if (*second_window_right < new_value)
+            new_value = *second_window_right;
 
         if (minimiser_value == window_values.front())
         {
