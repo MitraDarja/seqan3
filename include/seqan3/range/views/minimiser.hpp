@@ -549,16 +549,16 @@ private:
     requires !std::same_as<it_t2, seqan3::detail::empty_type>
     //!\endcond
     {
-        std::ranges::advance(window_right, 1);
-        std::ranges::advance(window_right2, 1);
+        std::ranges::advance(window_right, 1u);
         if (window_right == urange_end)
             return true;
+        std::ranges::advance(window_right2, 1u);
 
         uint64_t new_value = *window_right;
         if (*window_right2 < new_value)
             new_value = *window_right2;
 
-        if (minimiser_value == *(std::begin(window_values)))
+        if (minimiser_value == window_values.front())
         {
             window_values.pop_front();
             window_values.push_back(new_value);
