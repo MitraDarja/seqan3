@@ -419,10 +419,10 @@ private:
         requires !second_range_is_given
     //!\endcond
     {
-        for (uint32_t i = 0; (i < window_values_size - 1) ; i++)
+        for (uint32_t i = 0; i < window_values_size - 1 ; ++i)
         {
             window_values.push_back(*window_right);
-            std::ranges::advance(window_right,  1);
+            std::ranges::advance(window_right,  1u);
         }
         window_values.push_back(*window_right);
         minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
@@ -441,8 +441,8 @@ private:
         for (uint32_t i = 0; i < window_values_size - 1; ++i)
         {
             window_values.push_back(new_value);
-            std::ranges::advance(window_right,  1);
-            std::ranges::advance(window_right2,  1);
+            std::ranges::advance(window_right,  1u);
+            std::ranges::advance(window_right2,  1u);
             new_value = *window_right;
             if (*window_right2 < new_value)
                 new_value = *window_right2;
@@ -462,7 +462,7 @@ private:
         requires !second_range_is_given
     //!\endcond
     {
-        std::ranges::advance(window_right, 1);
+        std::ranges::advance(window_right, 1u);
         if (window_right == first_range_end)
             return true;
 
