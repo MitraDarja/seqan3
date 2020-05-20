@@ -21,13 +21,13 @@ int main()
     seqan3::debug_stream << (text | seqan3::views::kmer_hash(0b101_shape) | seqan3::views::minimiser(4)) << '\n';
 
     /* Minimiser view with two ranges
-     * The second range are the hash values from the reverse complement, the second reverse is necessary to put the
+     * The second range defines the hash values from the reverse complement, the second reverse is necessary to put the
      * hash values in the correct order. For the example here:
      * ACGTAGC | seqan3::views::complement                      => TGCATCG
      *         | std::views::reverse                            => GCTACGT
      *         | seqan3::views::kmer_hash(seqan3::ungapped{3})  => [39 (for GCA), 28 (for CTA), 49 (for TAC),
      *                                                              6 (for ACG), 27 (for CGT)]
-     * "GCA" is not the reverse complement from first k-mer in "ACGTAGC", which is "ACG", but "CGT" is.
+     * "GCA" is not the reverse complement from the first k-mer in "ACGTAGC", which is "ACG", but "CGT" is.
      * Therefore, a second reverse is necessary to find the smallest value between the original sequence and its
      * reverse complement.
      */
