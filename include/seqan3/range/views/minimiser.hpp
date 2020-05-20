@@ -436,8 +436,8 @@ private:
     //!\endcond
     {
         uint64_t new_value = *window_right;
-        if (*second_window_right < new_value)
-            new_value = *second_window_right;
+        if (auto second_value = *second_window_right; second_value < new_value)
+            new_value = second_value;
 
         for (uint32_t i = 0; i < window_values_size - 1; ++i)
         {
@@ -445,8 +445,8 @@ private:
             std::ranges::advance(window_right,  1u);
             std::ranges::advance(second_window_right,  1u);
             new_value = *window_right;
-            if (*second_window_right < new_value)
-                new_value = *second_window_right;
+            if (auto second_value = *second_window_right; second_value < new_value)
+                new_value = second_value;
         }
         window_values.push_back(new_value);
         minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
@@ -505,8 +505,8 @@ private:
         std::ranges::advance(second_window_right, 1u);
 
         uint64_t new_value = *window_right;
-        if (*second_window_right < new_value)
-            new_value = *second_window_right;
+        if (auto second_value = *second_window_right; second_value < new_value)
+            new_value = second_value;
 
         if (minimiser_value == window_values.front())
         {
