@@ -57,7 +57,7 @@ private:
     //!\brief The number of values in one window.
     uint32_t window_values_size;
 
-    template <typename first_rng_t, typename second_first_rng_t>
+    template <typename first_rng_t, typename second_rng_t>
     class window_iterator;
 
 public:
@@ -112,14 +112,14 @@ public:
     *                            std::ranges::forward_range.
     * \param[in] w_              The number of values in one window.
     */
-    template <typename first_rng_t, typename second_first_rng_t/* = std::ranges::empty_view<int>*/>
+    template <typename first_rng_t, typename second_rng_t/* = std::ranges::empty_view<int>*/>
     //!\cond
      requires std::ranges::viewable_range<first_rng_t> &&
               std::constructible_from<first_urange_t, ranges::ref_view<std::remove_reference_t<first_rng_t>>> &&
-              std::ranges::viewable_range<second_first_rng_t> &&
-              std::constructible_from<second_urange_t, ranges::ref_view<std::remove_reference_t<second_first_rng_t>>>
+              std::ranges::viewable_range<second_rng_t> &&
+              std::constructible_from<second_urange_t, ranges::ref_view<std::remove_reference_t<second_rng_t>>>
     //!\endcond
-    minimiser_view(first_rng_t && first_range_, second_first_rng_t && second_range_, uint32_t const w_) :
+    minimiser_view(first_rng_t && first_range_, second_rng_t && second_range_, uint32_t const w_) :
         first_range{std::views::all(std::forward<first_rng_t>(first_range_))},
         second_range{std::views::all(std::forward<first_rng_t>(second_range_))},
         window_values_size{w_}
@@ -213,14 +213,14 @@ public:
 
 //!\brief Iterator for calculating minimisers.
 template <std::ranges::view first_urange_t, typename second_urange_t>
-template <typename first_rng_t, typename second_first_rng_t>
+template <typename first_rng_t, typename second_rng_t>
 class minimiser_view<first_urange_t, second_urange_t>::window_iterator
 {
 private:
     //!\brief The iterator type of the underlying range.
     using first_it_t = std::ranges::iterator_t<first_rng_t>;
     //!\brief The iterator type of the second underlying range.
-    using second_it_t = std::ranges::iterator_t<second_first_rng_t>;
+    using second_it_t = std::ranges::iterator_t<second_rng_t>;
     //!\brief The sentinel type of the underlying range.
     using sentinel_t = std::ranges::sentinel_t<first_rng_t>;
 
@@ -534,9 +534,9 @@ template <std::ranges::viewable_range first_rng_t>
 minimiser_view(first_rng_t &&, uint32_t const & window_values_size) ->
 minimiser_view<std::ranges::all_view<first_rng_t>>;
 //!\brief A deduction guide for the view class template.
-template <std::ranges::viewable_range first_rng_t, std::ranges::viewable_range second_first_rng_t>
-minimiser_view(first_rng_t &&, second_first_rng_t &&, uint32_t const & window_values_size) ->
-minimiser_view<std::ranges::all_view<first_rng_t>, std::ranges::all_view<second_first_rng_t>>;
+template <std::ranges::viewable_range first_rng_t, std::ranges::viewable_range second_rng_t>
+minimiser_view(first_rng_t &&, second_rng_t &&, uint32_t const & window_values_size) ->
+minimiser_view<std::ranges::all_view<first_rng_t>, std::ranges::all_view<second_rng_t>>;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // minimiser_fn (adaptor definition)
