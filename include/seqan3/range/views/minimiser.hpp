@@ -286,7 +286,7 @@ public:
      //!\endcond
     window_iterator(window_iterator<urng3_t, urng4_t> it) :
         minimiser_value(std::move(it.minimiser_value)),
-        urange_end{std::move(it.urange_end)},
+        first_range_end{std::move(it.first_range_end)},
         window_right{std::move(it.window_right)},
         //window_right2{std::move(it.window_right2},
         window_values{std::move(it.window_values)}
@@ -439,7 +439,7 @@ private:
     sentinel_t first_range_end;
 
     //!brief Iterator to last element in range.
-    sentinel_t urange_end;
+    sentinel_t first_range_end;
 
     //!\brief Iterator to the rightmost value of one window.
     first_it_t window_right;
@@ -448,7 +448,7 @@ private:
     second_it_t second_window_right;
 
     //!\brief Iterator to the rightmost value of one window of the second range.
-    it_t2 window_right2;
+    second_it_t window_right2;
 
     //!\brief Stored values per window. It is necessary to store them, because a shift can remove the current minimiser.
     std::deque<value_type> window_values;
@@ -550,7 +550,7 @@ private:
     //!\endcond
     {
         std::ranges::advance(window_right, 1u);
-        if (window_right == urange_end)
+        if (window_right == first_range_end)
             return true;
         std::ranges::advance(window_right2, 1u);
 
