@@ -218,10 +218,12 @@ TEST_F(minimiser_test, combinability)
                                          | seqan3::views::minimiser(5, text3 | stop_at_t | rev_gapped_kmer_view));*/
 
     auto start_at_a = seqan3::views::drop(6);
-    EXPECT_RANGE_EQ(result3_start, text3 | start_at_a | kmer_view
-                                   | seqan3::views::minimiser(5, text3 | start_at_a | rev_kmer_view));
-    EXPECT_RANGE_EQ(result3_start, text3 | start_at_a | gapped_kmer_view
-                                   | seqan3::views::minimiser(5, text3 | start_at_a | rev_gapped_kmer_view));
+    EXPECT_RANGE_EQ(result3_start, text3 | start_at_a
+                                         | kmer_view
+                                         | seqan3::views::minimiser(5, text3 | start_at_a | rev_kmer_view));
+    EXPECT_RANGE_EQ(result3_start, text3 | start_at_a
+                                         | gapped_kmer_view
+                                         | seqan3::views::minimiser(5, text3 | start_at_a | rev_gapped_kmer_view));
 }
 
 TEST_F(minimiser_test, non_arithmetic_value)
