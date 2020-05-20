@@ -263,7 +263,6 @@ TEST_F(minimiser_test, window_too_big)
 {
     EXPECT_RANGE_EQ(result1_short, text1 | kmer_view | seqan3::views::minimiser(20));
     EXPECT_RANGE_EQ(result1_short, text1 | gapped_kmer_view | seqan3::views::minimiser(20));
-<<<<<<< HEAD
     EXPECT_RANGE_EQ(result1_short, text1 | kmer_view | seqan3::views::minimiser(20, text1 | rev_kmer_view));
     EXPECT_RANGE_EQ(result1_short, text1 | gapped_kmer_view
                                          | seqan3::views::minimiser(20, text1 | rev_gapped_kmer_view));
@@ -290,6 +289,7 @@ TEST_F(minimiser_test, combinability)
     EXPECT_RANGE_EQ(result3_start, text3 | start_at_a
                                          | gapped_kmer_view
                                          | seqan3::views::minimiser(5, text3 | start_at_a | rev_gapped_kmer_view));
+<<<<<<< HEAD
 }
 
 TEST_F(minimiser_test, non_arithmetic_value)
