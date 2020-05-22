@@ -13,8 +13,10 @@
 #pragma once
 
 #include <seqan3/core/detail/strong_type.hpp>
+#include <seqan3/range/views/complement.hpp>
 #include <seqan3/range/views/kmer_hash.hpp>
 #include <seqan3/range/views/minimiser.hpp>
+#include <seqan3/range/views/zip.hpp>
 
 namespace seqan3
 {
@@ -84,9 +86,16 @@ struct minimiser_hash_fn
         if (shape.size() > window_size.get())
             throw std::invalid_argument{"The size of the shape cannot be greater than the window size."};
 
-        return std::forward<urng_t>(urange) | seqan3::views::kmer_hash(shape)
-                                            | std::views::transform([seed] (uint64_t i) {return i ^ seed.get();})
-                                            | seqan3::views::minimiser(window_size.get() - shape.size() + 1);
+        auto forward_strand = std::forward<urng_t>(urange) | seqan3::views::kmer_hash(shape)
+                                            | std::views::transform([seed] (uint64_t i) {return i ^ seed.get();});
+
+        auto reverse_strand = std::forward<urng_t>(urange) | seqan3::views::complement
+                                                           | std::views::reverse
+                                                           | seqan3::views::kmer_hash(shape)
+                                                           | std::views::transform([seed] (uint64_t i) {return i ^ seed.get();})
+                                                           | std::views::reverse;
+        auto both = seqan3::views::zip(forward_strand, reverse_strand) | std::views::transform( [ ] (auto i) {return std::min(std::get<0>(i), std::get<1>(i));});
+        return std::forward<decltype(both)>(both) | seqan3::views::minimiser(window_size.get() - shape.size() + 1);
     }
 };
 
