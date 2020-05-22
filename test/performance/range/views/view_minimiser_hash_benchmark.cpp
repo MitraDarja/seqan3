@@ -39,11 +39,11 @@ inline seqan3::shape make_gapped_shape(size_t const k)
 
 static void arguments(benchmark::internal::Benchmark* b)
 {
-    for (int32_t sequence_length : {50'000, /*1'000'000*/})
+    for (int32_t sequence_length : {1000, 50'000, /*1'000'000*/})
     {
-        for (int32_t k : {8, /*16, 24,*/ 30})
+        for (int32_t k : {8, 16, 24, 30})
         {
-            for (int32_t w : {k + 5, k + 20})
+            for (int32_t w : {k + 5, k +10, k + 20})
             {
                 b->Args({sequence_length, k, w});
             }
@@ -130,12 +130,12 @@ void compute_minimisers(benchmark::State & state)
     state.counters["Throughput[bp/s]"] = bp_per_second(sequence_length - k + 1);
 }
 
-#ifdef SEQAN3_HAS_SEQAN2
+/*#ifdef SEQAN3_HAS_SEQAN2
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan2_ungapped)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan2_gapped)->Apply(arguments);
-#endif // SEQAN3_HAS_SEQAN2
+#endif // SEQAN3_HAS_SEQAN2*/
 
-BENCHMARK_TEMPLATE(compute_minimisers, method_tag::naive)->Apply(arguments);
+//BENCHMARK_TEMPLATE(compute_minimisers, method_tag::naive)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_ungapped)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_gapped)->Apply(arguments);
 
