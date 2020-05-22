@@ -13,6 +13,7 @@
 #pragma once
 
 #include <seqan3/core/detail/strong_type.hpp>
+#include <seqan3/range/views/complement.hpp>
 #include <seqan3/range/views/kmer_hash.hpp>
 #include <seqan3/range/views/minimiser.hpp>
 
@@ -59,6 +60,20 @@ struct minimiser_hash_fn
         return seqan3::detail::adaptor_from_functor{*this, shape, window_size, seed};
     }
 
+    /*!\brief Store the shape, the window size and the seed and return a range adaptor closure object.
+    * \param[in] shape       The seqan3::shape to use for hashing.
+    * \param[in] window_size The size of the window.
+    * \param[in] seed        The seed to use.
+    * \param[in] reverse     True, if the reverse complement should be also considered.
+    * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
+    * \returns               A range of converted elements.
+    */
+    constexpr auto operator()(shape const & shape, window_size const window_size, seed const seed, bool const reverse)
+                              const
+    {
+        return seqan3::detail::adaptor_from_functor{*this, shape, window_size, seed, reverse};
+    }
+
     /*!\brief Call the view's constructor with the underlying view, a seqan3::shape and a window size as argument.
      * \param[in] urange      The input range to process. Must model std::ranges::viewable_range and the reference type
      *                        of the range must model seqan3::semialphabet.
@@ -72,7 +87,8 @@ struct minimiser_hash_fn
     constexpr auto operator()(urng_t && urange,
                               shape const & shape,
                               window_size const window_size,
-                              seed const seed = seed{0x8F3F73B5CF1C9ADE}) const
+                              seed const seed = seed{0x8F3F73B5CF1C9ADE},
+                              bool const reverse = false) const
     {
         static_assert(std::ranges::viewable_range<urng_t>,
             "The range parameter to views::minimiser_hash cannot be a temporary of a non-view range.");
@@ -84,9 +100,23 @@ struct minimiser_hash_fn
         if (shape.size() > window_size.get())
             throw std::invalid_argument{"The size of the shape cannot be greater than the window size."};
 
-        return std::forward<urng_t>(urange) | seqan3::views::kmer_hash(shape)
+        if (reverse)
+        {
+            std::cout << "Test";
+        }
+            auto reverse_strand = std::forward<urng_t>(urange) | seqan3::views::complement
+                                                               | std::views::reverse
+                                                               | seqan3::views::kmer_hash(shape)
+                                                               | std::views::reverse;
+            return std::forward<urng_t>(urange) | seqan3::views::kmer_hash(shape)
+                                                | std::views::transform([seed] (uint64_t i) {return i ^ seed.get();})
+                                                | seqan3::views::minimiser(window_size.get() - shape.size() + 1,
+                                                                           reverse_strand);
+    //    }
+
+        /*return std::forward<urng_t>(urange) | seqan3::views::kmer_hash(shape)
                                             | std::views::transform([seed] (uint64_t i) {return i ^ seed.get();})
-                                            | seqan3::views::minimiser(window_size.get() - shape.size() + 1);
+                                            | seqan3::views::minimiser(window_size.get() - shape.size() + 1);*/
     }
 };
 
