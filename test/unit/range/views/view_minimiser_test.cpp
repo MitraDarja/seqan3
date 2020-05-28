@@ -229,5 +229,5 @@ TEST_F(minimiser_test, combinability)
 TEST_F(minimiser_test, non_arithmetic_value)
 {
     // just compute the minimizer directly on the alphabet
-    EXPECT_RANGE_EQ("ACACA"_dna4, text3 | minimiser_view);
+    EXPECT_RANGE_EQ("ACACA"_dna4, text3 | minimiser_no_rev_view);
 }
