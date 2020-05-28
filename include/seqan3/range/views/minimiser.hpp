@@ -54,9 +54,6 @@ private:
     //!\brief The second underlying range.
     second_urange_t second_range;
 
-    //!\brief The second underlying range.
-    urng_t2 urange2;
-
     //!\brief The number of values in one window.
     uint32_t window_values_size;
 
@@ -278,20 +275,6 @@ public:
         window_values{std::move(it.window_values)}
     { }
 
-    //!\brief Allow iterator on a const range to be constructible from an iterator over a non-const range.
-    /*template <typename urng3_t, typename urng4_t>
-    //!\cond
-        requires std::same_as<std::remove_const_t<urng_t>, urng3_t> &&
-                 std::same_as<std::remove_const_t<urng2_t>, urng4_t>
-     //!\endcond
-    window_iterator(window_iterator<urng3_t, urng4_t> it) :
-        minimiser_value(std::move(it.minimiser_value)),
-        first_range_end{std::move(it.first_range_end)},
-        window_right{std::move(it.window_right)},
-        //window_right2{std::move(it.window_right2},
-        window_values{std::move(it.window_values)}
-    { }*/
-
     /*!\brief                              Construct from begin and end iterators of a given range over
     *                                      std::totally_ordered values, and the number of values per window.
     * /param[in] it_start                  Iterator pointing to the first position of the first
@@ -317,30 +300,6 @@ public:
 
         if (window_right != first_range_end)
             window_first(window_values_size);
-    }
-    //!\}
-    /*!\brief                              Construct from begin and end iterators of a given range over
-    *                                      std::totally_ordered values, and the number of values per window.
-    * /param[in] it_start                  Iterator pointing to the first position of the std::totally_ordered range.
-    * /param[in] it_end                    Iterator pointing to the last position of the std::totally_ordered range.
-    * /param[in] it_start2                 Iterator pointing to the first position of the second
-                                           std::totally_ordered range.
-    * /param[in] window_values_size        The number of values in one window.
-    *
-    * \details
-    *
-    * Looks at the number of values per window in two ranges, returns the smallest between both as minimiser and
-    * shifts then by one to repeat this action. If a minimiser in consecutive windows is the same, it is returned only
-    * once.
-    *
-    */
-    window_iterator(it_t it_start, sentinel_t it_end, it_t2 it_start2, uint32_t window_values_size) :
-    urange_end{it_end}, window_right{it_start}, window_right2{it_start2}
-    {
-        if (window_values_size > std::ranges::distance(window_right, urange_end))
-            window_values_size = std::ranges::distance(window_right, urange_end);
-        if (window_right != urange_end)
-            window_first_two(window_values_size);
     }
     //!\}
 
@@ -438,17 +397,11 @@ private:
     //!brief Iterator to last element in range.
     sentinel_t first_range_end;
 
-    //!brief Iterator to last element in range.
-    sentinel_t first_range_end;
-
     //!\brief Iterator to the rightmost value of one window.
     first_it_t window_right;
 
     //!\brief Iterator to the rightmost value of one window of the second range.
     second_it_t second_window_right;
-
-    //!\brief Iterator to the rightmost value of one window of the second range.
-    second_it_t window_right2;
 
     //!\brief Stored values per window. It is necessary to store them, because a shift can remove the current minimiser.
     std::deque<value_type> window_values;
@@ -522,43 +475,6 @@ private:
 
         value_type new_value = window_value();
         if (minimiser_value == *(std::begin(window_values)))
-        {
-            window_values.pop_front();
-            window_values.push_back(new_value);
-            minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
-            return true;
-        }
-
-        window_values.pop_front();
-        window_values.push_back(new_value);
-
-        if (new_value < minimiser_value)
-        {
-            minimiser_value = new_value;
-            return true;
-        }
-
-        return false;
-    }
-
-    //!\brief Calculates the next minimiser value when two ranges are given.
-    // For the following windows, we remove the first window value (is now not in window_values) and add the new
-    // value that results from the window shifting.
-    bool next_minimiser_two()
-    //!\cond
-    requires !std::same_as<it_t2, seqan3::detail::empty_type>
-    //!\endcond
-    {
-        std::ranges::advance(window_right, 1u);
-        if (window_right == first_range_end)
-            return true;
-        std::ranges::advance(second_window_right, 1u);
-
-        uint64_t new_value = *window_right;
-        if (*second_window_right < new_value)
-            new_value = *second_window_right;
-
-        if (minimiser_value == window_values.front())
         {
             window_values.pop_front();
             window_values.push_back(new_value);
