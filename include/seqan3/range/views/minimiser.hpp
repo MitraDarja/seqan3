@@ -412,41 +412,52 @@ private:
         while (!next_minimiser()) {}
     }
 
-    //!\brief Calculates minimisers for the first window.
-    void window_first(uint32_t window_values_size)
+    //!\brief Returns new window value, when only one range is given.
+    auto window_value()
     //!\cond
         requires !second_range_is_given
     //!\endcond
     {
-        for (uint32_t i = 0; i < window_values_size - 1 ; ++i)
-        {
-            window_values.push_back(*window_right);
-            std::ranges::advance(window_right,  1u);
-        }
-        window_values.push_back(*window_right);
-        minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
+        return *window_right;
     }
 
-    //!\brief Calculates minimisers for the first window when two ranges are given.
-    void window_first(uint32_t window_values_size)
+    //!\brief Returns new window value, when two ranges are given.
+    auto window_value()
     //!\cond
         requires second_range_is_given
     //!\endcond
     {
-        uint64_t new_value = *window_right;
-        if (auto second_value = *second_window_right; second_value < new_value)
-            new_value = second_value;
+        return std::min(*window_right, *second_window_right);
+    }
 
-        for (uint32_t i = 0; i < window_values_size - 1; ++i)
+    //!\brief Advance first range.
+    void advance_window()
+    //!\cond
+        requires !second_range_is_given
+    //!\endcond
+    {
+        std::ranges::advance(window_right,  1u);
+    }
+
+    //!\brief Advance both ranges.
+    void advance_window()
+    //!\cond
+        requires second_range_is_given
+    //!\endcond
+    {
+        std::ranges::advance(window_right,  1u);
+        std::ranges::advance(second_window_right,  1u);
+    }
+
+    //!\brief Calculates minimisers for the first window.
+    void window_first(uint32_t window_values_size)
+    {
+        for (uint32_t i = 0; i < window_values_size - 1 ; ++i)
         {
-            window_values.push_back(new_value);
-            std::ranges::advance(window_right,  1u);
-            std::ranges::advance(second_window_right,  1u);
-            new_value = *window_right;
-            if (auto second_value = *second_window_right; second_value < new_value)
-                new_value = second_value;
+            window_values.push_back(window_value());
+            advance_window();
         }
-        window_values.push_back(new_value);
+        window_values.push_back(window_value());
         minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
     }
 
@@ -457,56 +468,13 @@ private:
      * value that results from the window shifting.
      */
     bool next_minimiser()
-    //!\cond
-        requires !second_range_is_given
-    //!\endcond
     {
-        std::ranges::advance(window_right, 1u);
+        advance_window();
         if (window_right == first_range_end)
             return true;
 
-        value_type new_value = *window_right;
-        if (minimiser_value == window_values.front())
-        {
-            window_values.pop_front();
-            window_values.push_back(new_value);
-            minimiser_value = *(std::min_element(std::begin(window_values), std::end(window_values)));
-            return true;
-        }
-
-        window_values.pop_front();
-        window_values.push_back(new_value);
-
-        if (new_value < minimiser_value)
-        {
-            minimiser_value = new_value;
-            return true;
-        }
-
-        return false;
-    }
-
-    /*!\brief Calculates the next minimiser value when two ranges are given.
-     *
-     * \details
-     * For the following windows, we remove the first window value (is now not in window_values) and add the new
-     * value that results from the window shifting.
-     */
-    bool next_minimiser()
-    //!\cond
-        requires second_range_is_given
-    //!\endcond
-    {
-        std::ranges::advance(window_right, 1u);
-        if (window_right == first_range_end)
-            return true;
-        std::ranges::advance(second_window_right, 1u);
-
-        uint64_t new_value = *window_right;
-        if (auto second_value = *second_window_right; second_value < new_value)
-            new_value = second_value;
-
-        if (minimiser_value == window_values.front())
+        value_type new_value = window_value();
+        if (minimiser_value == *(std::begin(window_values)))
         {
             window_values.pop_front();
             window_values.push_back(new_value);
