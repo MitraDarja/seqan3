@@ -84,9 +84,13 @@ class minimiser_view_properties_test: public ::testing::Test { };
 
 using underlying_range_types = ::testing::Types<std::vector<seqan3::dna4>,
                                                 std::vector<seqan3::dna4> const,
-                                                // Can be commented in as soon as #1743 is solved
-                                                //seqan3::bitcompressed_vector<seqan3::dna4>,
-                                                //seqan3::bitcompressed_vector<seqan3::dna4> const,
+#if SEQAN3_WORKAROUND_ISSUE_1743
+                                                // seqan3::bitcompressed_vector<seqan3::dna4>,
+                                                // seqan3::bitcompressed_vector<seqan3::dna4> const,
+#else // ^^^ workaround / no workaround vvv
+                                                seqan3::bitcompressed_vector<seqan3::dna4>,
+                                                seqan3::bitcompressed_vector<seqan3::dna4> const,
+#endif // SEQAN3_WORKAROUND_ISSUE_1743
                                                 std::list<seqan3::dna4>,
                                                 std::list<seqan3::dna4> const,
                                                 std::forward_list<seqan3::dna4>,
@@ -211,11 +215,12 @@ TEST_F(minimiser_test, combinability)
     EXPECT_RANGE_EQ(result3_gapped_stop, text3 | stop_at_t | gapped_kmer_view | minimiser_no_rev_view);
 
     std::vector<seqan3::dna4> textt{"ACGGCGACGTTTAG"_dna4};
-    // Can be commented in, once #1750 is merged
-    /*EXPECT_RANGE_EQ(result3_ungapped_stop, text3 | stop_at_t | kmer_view
-                                             | seqan3::views::minimiser(5, text3 | stop_at_t | rev_kmer_view));
-    EXPECT_RANGE_EQ(result3_gapped_stop, text3 | stop_at_t | gapped_kmer_view
-                                         | seqan3::views::minimiser(5, text3 | stop_at_t | rev_gapped_kmer_view));*/
+    EXPECT_RANGE_EQ(result3_ungapped_stop, text3 | stop_at_t
+                                                 | kmer_view
+                                                 | seqan3::views::minimiser(5, text3 | stop_at_t | rev_kmer_view));
+    EXPECT_RANGE_EQ(result3_gapped_stop, text3 | stop_at_t
+                                               | gapped_kmer_view
+                                               | seqan3::views::minimiser(5, text3 | stop_at_t | rev_gapped_kmer_view));
 
     auto start_at_a = seqan3::views::drop(6);
     EXPECT_RANGE_EQ(result3_start, text3 | start_at_a
