@@ -234,12 +234,12 @@ template <typename rng1_t, typename rng2_t>
 class minimiser_view<urng1_t, urng2_t>::window_iterator
 {
 private:
+    //!\brief The sentinel type of the first underlying range.
+    using urng1_sentinel_t = std::ranges::sentinel_t<rng1_t>;
     //!\brief The iterator type of the first underlying range.
     using urng1_iterator_t = std::ranges::iterator_t<rng1_t>;
     //!\brief The iterator type of the second underlying range.
     using urng2_iterator_t = std::ranges::iterator_t<rng2_t>;
-    //!\brief The sentinel type of the first underlying range.
-    using urng1_sentinel_t = std::ranges::sentinel_t<rng1_t>;
 
     template <typename rng1_t_, typename rng2_t_>
     friend class window_iterator;
@@ -308,7 +308,6 @@ public:
         urng1_iterator{std::move(urng1_iterator)},
         urng2_iterator{std::move(urng2_iterator)}
     {
-
         size_t size = std::ranges::distance(urng1_iterator, urng1_sentinel);
         window_values_size = std::min<size_t>(window_values_size, size);
 
