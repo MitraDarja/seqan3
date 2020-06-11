@@ -27,9 +27,12 @@ namespace seqan3::detail
 // ---------------------------------------------------------------------------------------------------------------------
 
 /*!\brief The type returned by seqan3::views::minimiser.
- * \tparam urng1_t The type of the underlying ranges, must model std::ranges::forward_range, the reference type must
+ * \tparam urng1_t The type of the underlying range, must model std::ranges::forward_range, the reference type must
  *                 model std::totally_ordered. The typical use case is that the reference type is the result of
  *                 seqan3::kmer_hash.
+ * \tparam urng2_t The type of the second underlying ranges, must model std::ranges::forward_range, the reference type
+ *                 must model std::totally_ordered. If only one range is provided this defaults to
+ *                 std::ranges::empty_view.
  * \implements std::ranges::view
  * \ingroup views
  *
