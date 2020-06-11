@@ -98,13 +98,13 @@ public:
     *                     std::ranges::forward_range.
     * \param[in] w_ The number of values in one window.
     */
-    template <typename rng1_t>
+    template <typename other_urng1_t>
     //!\cond
-     requires std::ranges::viewable_range<rng1_t> &&
-              std::constructible_from<urng1_t, ranges::ref_view<std::remove_reference_t<rng1_t>>>
+     requires std::ranges::viewable_range<other_urng1_t> &&
+              std::constructible_from<urng1_t, ranges::ref_view<std::remove_reference_t<other_urng1_t>>>
     //!\endcond
-    minimiser_view(rng1_t && urange1_, size_t const w_) :
-        urange1{std::views::all(std::forward<rng1_t>(urange1_))},
+    minimiser_view(other_urng1_t && urange1_, size_t const w_) :
+        urange1{std::views::all(std::forward<other_urng1_t>(urange1_))},
         urange2{default_urng2_t{}},
         window_values_size{w_}
     {}
@@ -129,16 +129,16 @@ public:
     *                     std::ranges::forward_range.
     * \param[in] w_ The number of values in one window.
     */
-    template <typename rng1_t, typename rng2_t/* = std::ranges::empty_view<int>*/>
+    template <typename other_urng1_t, typename other_urng2_t>
     //!\cond
-     requires std::ranges::viewable_range<rng1_t> &&
-              std::constructible_from<urng1_t, ranges::ref_view<std::remove_reference_t<rng1_t>>> &&
-              std::ranges::viewable_range<rng2_t> &&
-              std::constructible_from<urng2_t, ranges::ref_view<std::remove_reference_t<rng2_t>>>
+     requires std::ranges::viewable_range<other_urng1_t> &&
+              std::constructible_from<urng1_t, ranges::ref_view<std::remove_reference_t<other_urng1_t>>> &&
+              std::ranges::viewable_range<other_urng2_t> &&
+              std::constructible_from<urng2_t, ranges::ref_view<std::remove_reference_t<other_urng2_t>>>
     //!\endcond
-    minimiser_view(rng1_t && urange1_, rng2_t && urange2_, size_t const w_) :
-        urange1{std::views::all(std::forward<rng1_t>(urange1_))},
-        urange2{std::views::all(std::forward<rng2_t>(urange2_))},
+    minimiser_view(other_urng1_t && urange1_, other_urng2_t && urange2_, size_t const w_) :
+        urange1{std::views::all(std::forward<other_urng1_t>(urange1_))},
+        urange2{std::views::all(std::forward<other_urng2_t>(urange2_))},
         window_values_size{w_}
     {}
     //!\}
@@ -273,12 +273,12 @@ public:
     ~window_iterator() = default; //!< Defaulted.
 
     //!\brief Allow iterator on a const range to be constructible from an iterator over a non-const range.
-    template <typename urng3_t, typename urng4_t>
+    template <typename rng1_t_, typename rng2_t_>
     //!\cond
-        requires std::same_as<std::remove_const_t<urng1_t>, urng3_t> &&
-                 std::same_as<std::remove_const_t<urng2_t>, urng4_t>
+        requires std::same_as<std::remove_const_t<urng1_t>, rng1_t_> &&
+                 std::same_as<std::remove_const_t<urng2_t>, rng2_t_>
      //!\endcond
-    window_iterator(window_iterator<urng3_t, urng4_t> it) :
+    window_iterator(window_iterator<rng1_t_, rng2_t_> it) :
         minimiser_value{std::move(it.minimiser_value)},
         urng1_sentinel{std::move(it.urng1_sentinel)},
         urng1_iterator{std::move(it.urng1_iterator)},
