@@ -71,7 +71,10 @@ private:
     size_t window_values_size;
 
     template <typename rng1_t, typename rng2_t>
-    class window_iterator;
+    class basic_iterator;
+
+    //!\brief The sentinel type of the minimiser_view.
+    using sentinel = std::default_sentinel_t;
 
 public:
     /*!\name Constructors, destructor and assignment
@@ -159,28 +162,28 @@ public:
      *
      * Strong exception guarantee.
      */
-    auto begin()
+    basic_iterator<urng1_t, urng2_t> begin()
     {
-        return window_iterator<urng1_t, urng2_t>{std::ranges::end(urange1),
-                                                 std::ranges::begin(urange1),
-                                                 std::ranges::begin(urange2),
-                                                 window_values_size};
+        return {std::ranges::end(urange1),
+                std::ranges::begin(urange1),
+                std::ranges::begin(urange2),
+                window_values_size};
     }
 
     //!\copydoc begin()
-    auto begin() const
+    basic_iterator<urng1_t const, urng2_t const> begin() const
     //!\cond
         requires const_iterable
     //!\endcond
     {
-        return window_iterator<urng1_t const, urng2_t const>{std::ranges::end(urange1),
-                                                             std::ranges::begin(urange1),
-                                                             std::ranges::begin(urange2),
-                                                             window_values_size};
+        return {std::ranges::end(urange1),
+                std::ranges::begin(urange1),
+                std::ranges::begin(urange2),
+                window_values_size};
     }
 
     //!\copydoc begin()
-    auto cbegin() const
+    basic_iterator<urng1_t const, urng2_t const> cbegin() const
     //!\cond
         requires const_iterable
     //!\endcond
@@ -203,22 +206,13 @@ public:
      *
      * No-throw guarantee.
      */
-    auto end()
+    sentinel end() const
     {
-        return std::ranges::end(urange1);
+        return {};
     }
 
     //!\copydoc end()
-    auto end() const
-    //!\cond
-        requires const_iterable
-    //!\endcond
-    {
-        return std::ranges::end(urange1);
-    }
-
-    //!\copydoc end()
-    auto cend() const
+    sentinel cend() const
     //!\cond
         requires const_iterable
     //!\endcond
@@ -231,7 +225,7 @@ public:
 //!\brief Iterator for calculating minimisers.
 template <std::ranges::view urng1_t, std::ranges::view urng2_t>
 template <typename rng1_t, typename rng2_t>
-class minimiser_view<urng1_t, urng2_t>::window_iterator
+class minimiser_view<urng1_t, urng2_t>::basic_iterator
 {
 private:
     //!\brief The sentinel type of the first underlying range.
@@ -242,7 +236,7 @@ private:
     using urng2_iterator_t = std::ranges::iterator_t<rng2_t>;
 
     template <typename rng1_t_, typename rng2_t_>
-    friend class window_iterator;
+    friend class basic_iterator;
 
 public:
     /*!\name Associated types
@@ -265,12 +259,12 @@ public:
     /*!\name Constructors, destructor and assignment
      * \{
      */
-    window_iterator() = default; //!< Defaulted.
-    window_iterator(window_iterator const &) = default; //!< Defaulted.
-    window_iterator(window_iterator &&) = default; //!< Defaulted.
-    window_iterator & operator=(window_iterator const &) = default; //!< Defaulted.
-    window_iterator & operator=(window_iterator &&) = default; //!< Defaulted.
-    ~window_iterator() = default; //!< Defaulted.
+    basic_iterator() = default; //!< Defaulted.
+    basic_iterator(basic_iterator const &) = default; //!< Defaulted.
+    basic_iterator(basic_iterator &&) = default; //!< Defaulted.
+    basic_iterator & operator=(basic_iterator const &) = default; //!< Defaulted.
+    basic_iterator & operator=(basic_iterator &&) = default; //!< Defaulted.
+    ~basic_iterator() = default; //!< Defaulted.
 
     //!\brief Allow iterator on a const range to be constructible from an iterator over a non-const range.
     template <typename rng1_t_, typename rng2_t_>
@@ -278,13 +272,13 @@ public:
         requires (std::same_as<std::remove_const_t<urng1_t>, rng1_t_> &&
                   std::same_as<std::remove_const_t<urng2_t>, rng2_t_>)
      //!\endcond
-    window_iterator(window_iterator<rng1_t_, rng2_t_> it) :
+    basic_iterator(basic_iterator<rng1_t_, rng2_t_> it) :
         minimiser_value{std::move(it.minimiser_value)},
         urng1_sentinel{std::move(it.urng1_sentinel)},
         urng1_iterator{std::move(it.urng1_iterator)},
         urng2_iterator{std::move(it.urng2_iterator)},
         window_values{std::move(it.window_values)}
-    { }
+    {}
 
     /*!\brief Construct from begin and end iterators of a given range over std::totally_ordered values, and the number
               of values per window.
@@ -300,10 +294,10 @@ public:
     * once.
     *
     */
-    window_iterator(urng1_sentinel_t urng1_sentinel,
-                    urng1_iterator_t urng1_iterator,
-                    urng2_iterator_t urng2_iterator,
-                    size_t window_values_size) :
+    basic_iterator(urng1_sentinel_t urng1_sentinel,
+                   urng1_iterator_t urng1_iterator,
+                   urng2_iterator_t urng2_iterator,
+                   size_t window_values_size) :
         urng1_sentinel{std::move(urng1_sentinel)},
         urng1_iterator{std::move(urng1_iterator)},
         urng2_iterator{std::move(urng2_iterator)}
@@ -315,59 +309,59 @@ public:
     }
     //!\}
 
-    //!\anchor window_iterator_comparison
+    //!\anchor basic_iterator_comparison
     //!\name Comparison operators
     //!\{
 
-    //!\brief Compare to another window_iterator.
-    friend bool operator==(window_iterator const & lhs, window_iterator const & rhs)
+    //!\brief Compare to another basic_iterator.
+    friend bool operator==(basic_iterator const & lhs, basic_iterator const & rhs)
     {
         return (lhs.urng1_iterator == rhs.urng1_iterator) &&
                (lhs.window_values.size() == rhs.window_values.size());
     }
 
-    //!\brief Compare to another window_iterator.
-    friend bool operator!=(window_iterator const & lhs, window_iterator const & rhs)
+    //!\brief Compare to another basic_iterator.
+    friend bool operator!=(basic_iterator const & lhs, basic_iterator const & rhs)
     {
         return !(lhs == rhs);
     }
 
-    //!\brief Compare to the sentinel of the underlying range.
-    friend bool operator==(window_iterator const & lhs, urng1_sentinel_t const &)
+    //!\brief Compare to the sentinel of the minimiser_view.
+    friend bool operator==(basic_iterator const & lhs, sentinel const &)
     {
         return lhs.urng1_iterator == lhs.urng1_sentinel;
     }
 
-    //!\brief Compare to the sentinel of the underlying range.
-    friend bool operator==(urng1_sentinel_t const & lhs, window_iterator const & rhs)
+    //!\brief Compare to the sentinel of the minimiser_view.
+    friend bool operator==(sentinel const & lhs, basic_iterator const & rhs)
     {
         return rhs == lhs;
     }
 
-    //!\brief Compare to the sentinel of the underlying range.
-    friend bool operator!=(urng1_sentinel_t const & lhs, window_iterator const & rhs)
+    //!\brief Compare to the sentinel of the minimiser_view.
+    friend bool operator!=(sentinel const & lhs, basic_iterator const & rhs)
     {
         return !(lhs == rhs);
     }
 
-    //!\brief Compare to the sentinel of the underlying range.
-    friend bool operator!=(window_iterator const & lhs, urng1_sentinel_t const & rhs)
+    //!\brief Compare to the sentinel of the minimiser_view.
+    friend bool operator!=(basic_iterator const & lhs, sentinel const & rhs)
     {
         return !(lhs == rhs);
     }
     //!\}
 
     //!\brief Pre-increment.
-    window_iterator & operator++() noexcept
+    basic_iterator & operator++() noexcept
     {
         next_unique_minimiser();
         return *this;
     }
 
     //!\brief Post-increment.
-    window_iterator operator++(int) noexcept
+    basic_iterator operator++(int) noexcept
     {
-        window_iterator tmp{*this};
+        basic_iterator tmp{*this};
         next_unique_minimiser();
         return tmp;
     }
