@@ -100,8 +100,8 @@ public:
     */
     template <typename other_urng1_t>
     //!\cond
-     requires std::ranges::viewable_range<other_urng1_t> &&
-              std::constructible_from<urng1_t, ranges::ref_view<std::remove_reference_t<other_urng1_t>>>
+     requires (std::ranges::viewable_range<other_urng1_t> &&
+               std::constructible_from<urng1_t, ranges::ref_view<std::remove_reference_t<other_urng1_t>>>)
     //!\endcond
     minimiser_view(other_urng1_t && urange1_, size_t const w_) :
         urange1{std::views::all(std::forward<other_urng1_t>(urange1_))},
@@ -131,10 +131,10 @@ public:
     */
     template <typename other_urng1_t, typename other_urng2_t>
     //!\cond
-     requires std::ranges::viewable_range<other_urng1_t> &&
-              std::constructible_from<urng1_t, ranges::ref_view<std::remove_reference_t<other_urng1_t>>> &&
-              std::ranges::viewable_range<other_urng2_t> &&
-              std::constructible_from<urng2_t, ranges::ref_view<std::remove_reference_t<other_urng2_t>>>
+     requires (std::ranges::viewable_range<other_urng1_t> &&
+               std::constructible_from<urng1_t, ranges::ref_view<std::remove_reference_t<other_urng1_t>>> &&
+               std::ranges::viewable_range<other_urng2_t> &&
+               std::constructible_from<urng2_t, ranges::ref_view<std::remove_reference_t<other_urng2_t>>>)
     //!\endcond
     minimiser_view(other_urng1_t && urange1_, other_urng2_t && urange2_, size_t const w_) :
         urange1{std::views::all(std::forward<other_urng1_t>(urange1_))},
@@ -275,8 +275,8 @@ public:
     //!\brief Allow iterator on a const range to be constructible from an iterator over a non-const range.
     template <typename rng1_t_, typename rng2_t_>
     //!\cond
-        requires std::same_as<std::remove_const_t<urng1_t>, rng1_t_> &&
-                 std::same_as<std::remove_const_t<urng2_t>, rng2_t_>
+        requires (std::same_as<std::remove_const_t<urng1_t>, rng1_t_> &&
+                  std::same_as<std::remove_const_t<urng2_t>, rng2_t_>)
      //!\endcond
     window_iterator(window_iterator<rng1_t_, rng2_t_> it) :
         minimiser_value{std::move(it.minimiser_value)},
