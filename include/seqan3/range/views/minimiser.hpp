@@ -320,6 +320,19 @@ public:
     //!\name Comparison operators
     //!\{
 
+    //!\brief Compare to another window_iterator.
+    friend bool operator==(window_iterator const & lhs, window_iterator const & rhs)
+    {
+        return (lhs.urng1_iterator == rhs.urng1_iterator) &&
+               (lhs.window_values.size() == rhs.window_values.size());
+    }
+
+    //!\brief Compare to another window_iterator.
+    friend bool operator!=(window_iterator const & lhs, window_iterator const & rhs)
+    {
+        return !(lhs == rhs);
+    }
+
     //!\brief Compare to the sentinel of the underlying range.
     friend bool operator==(window_iterator const & lhs, urng1_sentinel_t const &)
     {
@@ -332,53 +345,16 @@ public:
         return rhs == lhs;
     }
 
-    //!\brief Compare to another window_iterator.
-    friend bool operator==(window_iterator const & lhs, window_iterator const & rhs)
-    {
-        return (lhs.urng1_iterator == rhs.urng1_iterator) &&
-               (lhs.window_values.size() == rhs.window_values.size());
-    }
-
-    //!\brief Compare to the sentinel of the underlying range.
-    friend bool operator!=(window_iterator const & lhs, urng1_sentinel_t const & rhs)
-    {
-        return !(lhs == rhs);
-    }
-
     //!\brief Compare to the sentinel of the underlying range.
     friend bool operator!=(urng1_sentinel_t const & lhs, window_iterator const & rhs)
     {
         return !(lhs == rhs);
     }
 
-    //!\brief Compare to another window_iterator.
-    friend bool operator!=(window_iterator const & lhs, window_iterator const & rhs)
+    //!\brief Compare to the sentinel of the underlying range.
+    friend bool operator!=(window_iterator const & lhs, urng1_sentinel_t const & rhs)
     {
         return !(lhs == rhs);
-    }
-
-    //!\brief Compare to another window_iterator.
-    friend bool operator<(window_iterator const & lhs, window_iterator const & rhs)
-    {
-        return (lhs.urng1_iterator < rhs.urng1_iterator) && (lhs.window_values.size() < rhs.window_values.size());
-    }
-
-    //!\brief Compare to another window_iterator.
-    friend bool operator>(window_iterator const & lhs, window_iterator const & rhs)
-    {
-        return (lhs.urng1_iterator > rhs.urng1_iterator) && (lhs.window_values.size() > rhs.window_values.size());
-    }
-
-    //!\brief Compare to another window_iterator.
-    friend bool operator<=(window_iterator const & lhs, window_iterator const & rhs)
-    {
-        return (lhs.urng1_iterator <= rhs.urng1_iterator) && (lhs.window_values.size() <= rhs.window_values.size());
-    }
-
-    //!\brief Compare to another window_iterator.
-    friend bool operator>=(window_iterator const & lhs, window_iterator const & rhs)
-    {
-        return (lhs.urng1_iterator >= rhs.urng1_iterator) && (lhs.window_values.size() >= rhs.window_values.size());
     }
     //!\}
 
