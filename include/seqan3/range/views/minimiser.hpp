@@ -53,6 +53,10 @@ private:
     //!\brief Boolean variable, which is true, when second range is not of empty type.
     static constexpr bool second_range_is_given = !std::same_as<urng2_t, default_urng2_t>;
 
+    static_assert(!second_range_is_given || std::totally_ordered_with<std::ranges::range_reference_t<urng1_t>,
+                                                                      std::ranges::range_reference_t<urng2_t>>,
+                  "The reference types of the underlying ranges must model std::totally_ordered_with.");
+
     //!\brief Whether the given ranges are const_iterable
     static constexpr bool const_iterable = seqan3::const_iterable_range<urng1_t> &&
                                            seqan3::const_iterable_range<urng2_t>;
