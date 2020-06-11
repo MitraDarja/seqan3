@@ -166,8 +166,8 @@ using ::ranges::cpp20::subrange;
 // using ::ranges::cpp20::borrowed_subrange_t;
 
 // [range.empty], empty view
-// using ::ranges::cpp20::empty_view;
-// namespace views { template<class T> inline constexpr empty_view<T> empty{}; }
+using ::ranges::cpp20::empty_view;
+namespace views { template<class T> inline constexpr empty_view<T> empty{}; }
 
 // [range.single], single view
 // using ::ranges::cpp20::single_view;
