@@ -528,7 +528,6 @@ struct minimiser_fn
         return minimiser_view{urange1, window_values_size};
     }
 
-
     //!\brief Store the number of values in one window and the second range and return a range adaptor closure object.
     template <std::ranges::range urng2_t>
     constexpr auto operator()(size_t const window_values_size, urng2_t && urange2) const
