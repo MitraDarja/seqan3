@@ -215,12 +215,23 @@ TEST_F(minimiser_test, combinability)
     EXPECT_RANGE_EQ(result3_gapped_stop, text3 | stop_at_t | gapped_kmer_view | minimiser_no_rev_view);
 
     std::vector<seqan3::dna4> textt{"ACGGCGACGTTTAG"_dna4};
+#if SEQAN3_WORKAROUND_ISSUE_1754
+    /*
     EXPECT_RANGE_EQ(result3_ungapped_stop, text3 | stop_at_t
                                                  | kmer_view
                                                  | seqan3::views::minimiser(5, text3 | stop_at_t | rev_kmer_view));
     EXPECT_RANGE_EQ(result3_gapped_stop, text3 | stop_at_t
                                                | gapped_kmer_view
                                                | seqan3::views::minimiser(5, text3 | stop_at_t | rev_gapped_kmer_view));
+    */
+#else // ^^^ workaround / no workaround vvv
+    EXPECT_RANGE_EQ(result3_ungapped_stop, text3 | stop_at_t
+                                                 | kmer_view
+                                                 | seqan3::views::minimiser(5, text3 | stop_at_t | rev_kmer_view));
+    EXPECT_RANGE_EQ(result3_gapped_stop, text3 | stop_at_t
+                                               | gapped_kmer_view
+                                               | seqan3::views::minimiser(5, text3 | stop_at_t | rev_gapped_kmer_view));
+#endif // SEQAN3_WORKAROUND_ISSUE_1754
 
     auto start_at_a = seqan3::views::drop(6);
     EXPECT_RANGE_EQ(result3_start, text3 | start_at_a
