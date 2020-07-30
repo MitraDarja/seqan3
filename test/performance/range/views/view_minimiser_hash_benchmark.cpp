@@ -9,6 +9,7 @@
 
 #include <seqan3/alphabet/nucleotide/dna4.hpp>
 #include <seqan3/range/views/minimiser_hash.hpp>
+#include <seqan3/range/views/minimiser_hash2.hpp>
 #include <seqan3/test/performance/naive_minimiser_hash.hpp>
 #include <seqan3/test/performance/sequence_generator.hpp>
 #include <seqan3/test/performance/units.hpp>
@@ -55,6 +56,8 @@ enum class method_tag
 {
     seqan3_ungapped,
     seqan3_gapped,
+    seqan3_ungapped2,
+    seqan3_gapped2,
     naive,
     seqan2_ungapped,
     seqan2_gapped
@@ -102,6 +105,16 @@ void compute_minimisers(benchmark::State & state)
         else if constexpr (tag == method_tag::seqan3_gapped)
         {
             for (auto h : seq | seqan3::views::minimiser_hash(make_gapped_shape(k), seqan3::window_size{w}))
+                benchmark::DoNotOptimize(sum += h);
+        }
+        else if constexpr (tag == method_tag::seqan3_ungapped2)
+        {
+            for (auto h : seq | seqan3::views::minimiser_hash2(seqan3::ungapped{static_cast<uint8_t>(k)}, seqan3::window_size{w}))
+                benchmark::DoNotOptimize(sum += h);
+        }
+        else if constexpr (tag == method_tag::seqan3_gapped2)
+        {
+            for (auto h : seq | seqan3::views::minimiser_hash2(make_gapped_shape(k), seqan3::window_size{w}))
                 benchmark::DoNotOptimize(sum += h);
         }
         #ifdef SEQAN3_HAS_SEQAN2
@@ -169,6 +182,8 @@ BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan2_gapped)->Apply(argumen
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::naive)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_ungapped)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_gapped)->Apply(arguments);
+BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_ungapped2)->Apply(arguments);
+BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_gapped2)->Apply(arguments);
 
 BENCHMARK_TEMPLATE(compute_minimisers_on_poly_A_sequence, method_tag::seqan3_ungapped)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers_on_poly_A_sequence, method_tag::seqan3_gapped)->Apply(arguments);
