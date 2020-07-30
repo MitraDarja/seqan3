@@ -25,10 +25,10 @@ struct seed2 : seqan3::detail::strong_type<uint64_t, seed2>
     using seqan3::detail::strong_type<uint64_t, seed2>::strong_type;
 };
 
-//!\brief strong_type for the window_size.
-struct window_size : seqan3::detail::strong_type<uint32_t, window_size>
+//!\brief strong_type for the window_size2.
+struct window_size2 : seqan3::detail::strong_type<uint32_t, window_size2>
 {
-    using seqan3::detail::strong_type<uint32_t, window_size>::strong_type;
+    using seqan3::detail::strong_type<uint32_t, window_size2>::strong_type;
 };
 } // namespace seqan3
 
@@ -39,40 +39,40 @@ struct minimiser_hash2_fn
 {
     /*!\brief Store the shape and the window size and return a range adaptor closure object.
     * \param[in] shape       The seqan3::shape to use for hashing.
-    * \param[in] window_size The windows size to use.
-    * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
+    * \param[in] window_size2 The windows size to use.
+    * \throws std::invalid_argument if the size of the shape is greater than the `window_size2`.
     * \returns               A range of converted elements.
     */
-    constexpr auto operator()(shape const & shape, window_size const window_size) const
+    constexpr auto operator()(shape const & shape, window_size2 const window_size2) const
     {
-        return seqan3::detail::adaptor_from_functor{*this, shape, window_size};
+        return seqan3::detail::adaptor_from_functor{*this, shape, window_size2};
     }
 
     /*!\brief Store the shape, the window size and the seed2 and return a range adaptor closure object.
     * \param[in] shape       The seqan3::shape to use for hashing.
-    * \param[in] window_size The size of the window.
+    * \param[in] window_size2 The size of the window.
     * \param[in] seed2        The seed2 to use.
-    * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
+    * \throws std::invalid_argument if the size of the shape is greater than the `window_size2`.
     * \returns               A range of converted elements.
     */
-    constexpr auto operator()(shape const & shape, window_size const window_size, seed2 const seed2) const
+    constexpr auto operator()(shape const & shape, window_size2 const window_size2, seed2 const seed2) const
     {
-        return seqan3::detail::adaptor_from_functor{*this, shape, window_size, seed2};
+        return seqan3::detail::adaptor_from_functor{*this, shape, window_size2, seed2};
     }
 
     /*!\brief Call the view's constructor with the underlying view, a seqan3::shape and a window size as argument.
      * \param[in] urange      The input range to process. Must model std::ranges::viewable_range and the reference type
      *                        of the range must model seqan3::semialphabet.
      * \param[in] shape       The seqan3::shape to use for hashing.
-     * \param[in] window_size The size of the window.
+     * \param[in] window_size2 The size of the window.
      * \param[in] seed2        The seed2 to use.
-     * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
+     * \throws std::invalid_argument if the size of the shape is greater than the `window_size2`.
      * \returns               A range of converted elements.
      */
     template <std::ranges::range urng_t>
     constexpr auto operator()(urng_t && urange,
                               shape const & shape,
-                              window_size const window_size,
+                              window_size2 const window_size2,
                               seed2 const seed2 = seed2{0x8F3F73B5CF1C9ADE}) const
     {
         static_assert(std::ranges::viewable_range<urng_t>,
@@ -82,7 +82,7 @@ struct minimiser_hash2_fn
         static_assert(semialphabet<std::ranges::range_reference_t<urng_t>>,
             "The range parameter to views::minimiser_hash must be over elements of seqan3::semialphabet.");
 
-        if (shape.size() > window_size.get())
+        if (shape.size() > window_size2.get())
             throw std::invalid_argument{"The size of the shape cannot be greater than the window size."};
 
         auto forward_strand = std::forward<urng_t>(urange) | seqan3::views::kmer_hash(shape)
@@ -98,7 +98,7 @@ struct minimiser_hash2_fn
 
        auto both = seqan3::views::zip(forward_strand, reverse_strand) | std::views::transform( [ ] (auto i) {return std::min(std::get<0>(i), std::get<1>(i));});
 
-        return seqan3::detail::minimiser_view(std::forward<decltype(both)>(both), window_size.get() - shape.size() + 1);
+        return seqan3::detail::minimiser_view(std::forward<decltype(both)>(both), window_size2.get() - shape.size() + 1);
     }
 };
 
@@ -116,7 +116,7 @@ namespace seqan3::views
  *                           omitted in pipe notation]
  * \param[in] urange         The range being processed. [parameter is omitted in pipe notation]
  * \param[in] shape          The seqan3::shape that determines how to compute the hash value.
- * \param[in] window_size    The window size to use.
+ * \param[in] window_size2    The window size to use.
  * \param[in] seed2           The seed2 used to skew the hash values. Default: 0x8F3F73B5CF1C9ADE.
  * \returns                  A range of `size_t` where each value is the minimiser of the resp. window.
  *                           See below for the properties of the returned range.
