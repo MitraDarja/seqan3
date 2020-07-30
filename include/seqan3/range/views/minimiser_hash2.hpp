@@ -19,10 +19,10 @@
 
 namespace seqan3
 {
-//!\brief strong_type for seed.
-struct seed : seqan3::detail::strong_type<uint64_t, seed>
+//!\brief strong_type for seed2.
+struct seed2 : seqan3::detail::strong_type<uint64_t, seed2>
 {
-    using seqan3::detail::strong_type<uint64_t, seed>::strong_type;
+    using seqan3::detail::strong_type<uint64_t, seed2>::strong_type;
 };
 
 //!\brief strong_type for the window_size.
@@ -48,16 +48,16 @@ struct minimiser_hash2_fn
         return seqan3::detail::adaptor_from_functor{*this, shape, window_size};
     }
 
-    /*!\brief Store the shape, the window size and the seed and return a range adaptor closure object.
+    /*!\brief Store the shape, the window size and the seed2 and return a range adaptor closure object.
     * \param[in] shape       The seqan3::shape to use for hashing.
     * \param[in] window_size The size of the window.
-    * \param[in] seed        The seed to use.
+    * \param[in] seed2        The seed2 to use.
     * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
     * \returns               A range of converted elements.
     */
-    constexpr auto operator()(shape const & shape, window_size const window_size, seed const seed) const
+    constexpr auto operator()(shape const & shape, window_size const window_size, seed2 const seed2) const
     {
-        return seqan3::detail::adaptor_from_functor{*this, shape, window_size, seed};
+        return seqan3::detail::adaptor_from_functor{*this, shape, window_size, seed2};
     }
 
     /*!\brief Call the view's constructor with the underlying view, a seqan3::shape and a window size as argument.
@@ -65,7 +65,7 @@ struct minimiser_hash2_fn
      *                        of the range must model seqan3::semialphabet.
      * \param[in] shape       The seqan3::shape to use for hashing.
      * \param[in] window_size The size of the window.
-     * \param[in] seed        The seed to use.
+     * \param[in] seed2        The seed2 to use.
      * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
      * \returns               A range of converted elements.
      */
@@ -73,7 +73,7 @@ struct minimiser_hash2_fn
     constexpr auto operator()(urng_t && urange,
                               shape const & shape,
                               window_size const window_size,
-                              seed const seed = seed{0x8F3F73B5CF1C9ADE}) const
+                              seed2 const seed2 = seed2{0x8F3F73B5CF1C9ADE}) const
     {
         static_assert(std::ranges::viewable_range<urng_t>,
             "The range parameter to views::minimiser_hash cannot be a temporary of a non-view range.");
@@ -86,14 +86,14 @@ struct minimiser_hash2_fn
             throw std::invalid_argument{"The size of the shape cannot be greater than the window size."};
 
         auto forward_strand = std::forward<urng_t>(urange) | seqan3::views::kmer_hash(shape)
-                                                           | std::views::transform([seed] (uint64_t i)
-                                                                                  {return i ^ seed.get();});
+                                                           | std::views::transform([seed2] (uint64_t i)
+                                                                                  {return i ^ seed2.get();});
 
         auto reverse_strand = std::forward<urng_t>(urange) | seqan3::views::complement
                                                            | std::views::reverse
                                                            | seqan3::views::kmer_hash(shape)
-                                                           | std::views::transform([seed] (uint64_t i)
-                                                                                  {return i ^ seed.get();})
+                                                           | std::views::transform([seed2] (uint64_t i)
+                                                                                  {return i ^ seed2.get();})
                                                            | std::views::reverse;
 
        auto both = seqan3::views::zip(forward_strand, reverse_strand) | std::views::transform( [ ] (auto i) {return std::min(std::get<0>(i), std::get<1>(i));});
@@ -111,13 +111,13 @@ namespace seqan3::views
  * \{
  */
 
-/*!\brief                    Computes minimisers for a range with a given shape, window size and seed.
+/*!\brief                    Computes minimisers for a range with a given shape, window size and seed2.
  * \tparam urng_t            The type of the range being processed. See below for requirements. [template parameter is
  *                           omitted in pipe notation]
  * \param[in] urange         The range being processed. [parameter is omitted in pipe notation]
  * \param[in] shape          The seqan3::shape that determines how to compute the hash value.
  * \param[in] window_size    The window size to use.
- * \param[in] seed           The seed used to skew the hash values. Default: 0x8F3F73B5CF1C9ADE.
+ * \param[in] seed2           The seed2 used to skew the hash values. Default: 0x8F3F73B5CF1C9ADE.
  * \returns                  A range of `size_t` where each value is the minimiser of the resp. window.
  *                           See below for the properties of the returned range.
  * \ingroup views
@@ -135,7 +135,7 @@ namespace seqan3::views
  * since it is located at an other position than the previous "AAA" minimiser and hence storing the second
  * "AAA"-minimiser is not redundant but necessary.
  *
- * ### Non-lexicographical Minimisers by skewing the hash value with a seed
+ * ### Non-lexicographical Minimisers by skewing the hash value with a seed2
  *
  * It might happen that a minimiser changes only slightly when sliding the window over the sequence. For instance, when
  * a minimiser starts with a repetition of A’s, then in the next window it is highly likely that the minimiser will
@@ -144,8 +144,8 @@ namespace seqan3::views
  * they contain no new information about the underlying sequence.
  * Additionally, sequences with a repetition of A’s will be seen as more similar to each other than they actually are.
  * As [Marçais et al.](https://doi.org/10.1093/bioinformatics/btx235) have shown, randomizing the order of the k-mers
- * can solve this problem. Therefore, a random seed is used to XOR all k-mers, thereby randomizing the
- * order. The user can change the seed to any other value he or she thinks is useful. A seed of 0 is returning the
+ * can solve this problem. Therefore, a random seed2 is used to XOR all k-mers, thereby randomizing the
+ * order. The user can change the seed2 to any other value he or she thinks is useful. A seed2 of 0 is returning the
  * lexicographical order.
  *
  * \sa seqan3::views::minimiser_view
