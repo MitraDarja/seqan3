@@ -40,9 +40,9 @@ inline seqan3::shape make_gapped_shape(size_t const k)
 
 static void arguments(benchmark::internal::Benchmark* b)
 {
-    for (int32_t sequence_length : {50'000, /*1'000'000*/})
+    for (int32_t sequence_length : {1000, 50'000, /*1'000'000*/})
     {
-        for (int32_t k : {8, /*16, 24,*/ 30})
+        for (int32_t k : {8, 16, /*16, 24,*/ 30})
         {
             for (int32_t w : {k + 5, k + 20})
             {
@@ -175,17 +175,17 @@ void compute_minimisers_on_poly_A_sequence(benchmark::State & state)
 
 
 #ifdef SEQAN3_HAS_SEQAN2
-BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan2_ungapped)->Apply(arguments);
-BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan2_gapped)->Apply(arguments);
+/*BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan2_ungapped)->Apply(arguments);
+BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan2_gapped)->Apply(arguments);*/
 #endif // SEQAN3_HAS_SEQAN2
 
-BENCHMARK_TEMPLATE(compute_minimisers, method_tag::naive)->Apply(arguments);
+//BENCHMARK_TEMPLATE(compute_minimisers, method_tag::naive)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_ungapped)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_gapped)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_ungapped2)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_gapped2)->Apply(arguments);
 
-BENCHMARK_TEMPLATE(compute_minimisers_on_poly_A_sequence, method_tag::seqan3_ungapped)->Apply(arguments);
-BENCHMARK_TEMPLATE(compute_minimisers_on_poly_A_sequence, method_tag::seqan3_gapped)->Apply(arguments);
+//BENCHMARK_TEMPLATE(compute_minimisers_on_poly_A_sequence, method_tag::seqan3_ungapped)->Apply(arguments);
+//BENCHMARK_TEMPLATE(compute_minimisers_on_poly_A_sequence, method_tag::seqan3_gapped)->Apply(arguments);
 
 BENCHMARK_MAIN();

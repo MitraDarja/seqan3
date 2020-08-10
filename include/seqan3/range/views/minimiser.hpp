@@ -60,6 +60,10 @@ private:
     //!\brief Boolean variable, which is true, when second range is not of empty type.
     static constexpr bool second_range_is_given = !std::same_as<urng2_t, default_urng2_t>;
 
+    static constexpr bool zipped = std::same_as<urng2_t, urng1_t>;
+
+    //static constexpr uint64_t seed = 0x8F3F73B5CF1C9ADE;
+
     static_assert(!second_range_is_given || std::totally_ordered_with<std::ranges::range_reference_t<urng1_t>,
                                                                       std::ranges::range_reference_t<urng2_t>>,
                   "The reference types of the underlying ranges must model std::totally_ordered_with.");
@@ -75,6 +79,10 @@ private:
 
     //!\brief The number of values in one window.
     size_t window_size{};
+
+
+
+    //bool zipped{};
 
     template <typename rng1_t, typename rng2_t>
     class basic_iterator;
@@ -101,6 +109,7 @@ public:
     minimiser_view(urng1_t urange1, size_t const window_size) :
         minimiser_view{std::move(urange1), default_urng2_t{}, window_size}
     {}
+
 
     /*!\brief Construct from a non-view that can be view-wrapped and a given number of values in one window.
     * \tparam other_urng1_t  The type of another urange. Must model std::ranges::viewable_range and be constructible
@@ -251,7 +260,7 @@ public:
     //!\brief Type for distances between iterators.
     using difference_type = std::ranges::range_difference_t<rng1_t>;
     //!\brief Value type of this iterator.
-    using value_type = std::ranges::range_value_t<rng1_t>;
+    using value_type = size_t;//std::ranges::range_value_t<rng1_t>;
     //!\brief The pointer type.
     using pointer = void;
     //!\brief Reference to `value_type`.
@@ -404,7 +413,9 @@ private:
     //!\brief Returns new window value.
     auto window_value() const
     {
-        if constexpr (!second_range_is_given)
+        if constexpr (zipped)
+            return std::min(std::get<0>(*urng1_iterator), std::get<1>(*urng1_iterator)); //std::min(std::get<0>(*urng1_iterator) ^ seed, std::get<1>(*urng1_iterator) ^ seed);
+        else if constexpr (!second_range_is_given)
             return *urng1_iterator;
         else
             return std::min(*urng1_iterator, *urng2_iterator);
@@ -414,7 +425,7 @@ private:
     void advance_window()
     {
         ++urng1_iterator;
-        if constexpr (second_range_is_given)
+        if constexpr (second_range_is_given & (!zipped))
             ++urng2_iterator;
     }
 
