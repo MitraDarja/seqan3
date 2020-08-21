@@ -99,13 +99,43 @@ struct minimiser_hash_fn
         return seqan3::detail::minimiser_view(forward_strand, reverse_strand, window_size.get() - shape.size() + 1);
     }
 
+    /*!\brief Store the shape and the window size and return a range adaptor closure object.
+    * \param[in] shape       The seqan3::shape to use for hashing.
+    * \param[in] window_size The windows size to use.
+    * \param[in] bloomfilter The bloomfilter with hash values that should be down weighted.
+    * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
+    * \returns               A range of converted elements.
+    */
+    template <class IBFType>
+    constexpr auto operator()(shape const & shape, window_size const window_size, IBFType bloomfilter) const
+    {
+        return seqan3::detail::adaptor_from_functor{*this, shape, window_size, bloomfilter};
+    }
+
+    /*!\brief Store the shape and the window size and return a range adaptor closure object.
+    * \param[in] shape       The seqan3::shape to use for hashing.
+    * \param[in] window_size The windows size to use.
+    * \param[in] bloomfilter The bloomfilter with hash values that should be down weighted.
+    * \param[in] seed        The seed to use.
+    * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
+    * \returns               A range of converted elements.
+    */
     template <class IBFType>
     constexpr auto operator()(shape const & shape, window_size const window_size, IBFType bloomfilter, seed const seed) const
     {
         return seqan3::detail::adaptor_from_functor{*this, shape, window_size, bloomfilter, seed};
     }
 
-
+    /*!\brief Call the view's constructor with the underlying view, a seqan3::shape and a window size as argument.
+     * \param[in] urange      The input range to process. Must model std::ranges::viewable_range and the reference type
+     *                        of the range must model seqan3::semialphabet.
+     * \param[in] shape       The seqan3::shape to use for hashing.
+     * \param[in] window_size The size of the window.
+     * \param[in] bloomfilter The bloomfilter with hash values that should be down weighted.
+     * \param[in] seed        The seed to use.
+     * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
+     * \returns               A range of converted elements.
+     */
     template <std::ranges::range urng_t, class IBFType>
     constexpr auto operator()(urng_t && urange,
                               shape const & shape,
