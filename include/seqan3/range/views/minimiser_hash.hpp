@@ -98,6 +98,44 @@ struct minimiser_hash_fn
 
         return seqan3::detail::minimiser_view(forward_strand, reverse_strand, window_size.get() - shape.size() + 1);
     }
+
+    template <class IBFType>
+    constexpr auto operator()(shape const & shape, window_size const window_size, IBFType bloomfilter, seed const seed) const
+    {
+        return seqan3::detail::adaptor_from_functor{*this, shape, window_size, bloomfilter, seed};
+    }
+
+
+    template <std::ranges::range urng_t, class IBFType>
+    constexpr auto operator()(urng_t && urange,
+                              shape const & shape,
+                              window_size const window_size,
+                              IBFType bloomfilter,
+                              seed const seed = seed{0x8F3F73B5CF1C9ADE}) const
+    {
+        static_assert(std::ranges::viewable_range<urng_t>,
+            "The range parameter to views::minimiser_hash cannot be a temporary of a non-view range.");
+        static_assert(std::ranges::forward_range<urng_t>,
+            "The range parameter to views::minimiser_hash must model std::ranges::forward_range.");
+        static_assert(semialphabet<std::ranges::range_reference_t<urng_t>>,
+            "The range parameter to views::minimiser_hash must be over elements of seqan3::semialphabet.");
+
+        if (shape.size() > window_size.get())
+            throw std::invalid_argument{"The size of the shape cannot be greater than the window size."};
+
+        auto forward_strand = std::forward<urng_t>(urange) | seqan3::views::kmer_hash(shape)
+                                                           | std::views::transform([seed] (uint64_t i)
+                                                                                  {return i ^ seed.get();});
+
+        auto reverse_strand = std::forward<urng_t>(urange) | seqan3::views::complement
+                                                           | std::views::reverse
+                                                           | seqan3::views::kmer_hash(shape)
+                                                           | std::views::transform([seed] (uint64_t i)
+                                                                                  {return i ^ seed.get();})
+                                                           | std::views::reverse;
+
+        return seqan3::detail::minimiser_view(forward_strand, reverse_strand, window_size.get() - shape.size() + 1, bloomfilter);
+    }
 };
 
 } // namespace seqan3::detail

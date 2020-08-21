@@ -79,6 +79,11 @@ protected:
     result_t ungapped_stop_at_t3{26, 97}; // ACGG, CGAC
     result_t gapped3{2, 5, 3, 2, 1};      // A--G, C--C, A--T, a--g, a--c "-" for gap
     result_t gapped_stop_at_t3{2, 5};     // A--G, C--C "-" for gap
+
+    result_t weighted_ungapped3{91, 97, 27, 6};    // ccgt, CGAC, ACGT, aacg, aaac
+    result_t weighted_ungapped_stop_at_t3{91, 97}; // ccgt, CGAC
+    result_t weighted_gapped3{5, 3};            //  C--C, A--T "-" for gap
+    result_t weighted_gapped_stop_at_t3{5};        //  C--C "-" for gap
 };
 
 TYPED_TEST(minimiser_hash_properties_test, different_input_ranges)
@@ -89,6 +94,25 @@ TYPED_TEST(minimiser_hash_properties_test, different_input_ranges)
     result_t gapped{3, 5, 3, 2, 1};      // A--T, C--C, A--T, a--g, a--c - "-" for gap
     EXPECT_RANGE_EQ(ungapped, text | ungapped_view);
     EXPECT_RANGE_EQ(gapped, text | gapped_view);
+
+    seqan3::interleaved_bloom_filter<seqan3::data_layout::uncompressed> bloomfilter{seqan3::bin_count{1u},
+                                                                                    seqan3::bin_size{100u},
+                                                                                    seqan3::hash_function_count{1}};
+
+    bloomfilter.emplace(97, seqan3::bin_index{0u}); // CGAC
+    bloomfilter.emplace(1, seqan3::bin_index{0u});  // aaac
+    auto weighted_ungapped_view = seqan3::views::minimiser_hash(ungapped_shape,
+                                                              seqan3::window_size{8},
+                                                              bloomfilter,
+                                                              seqan3::seed{0});
+    auto weighted_gapped_view = seqan3::views::minimiser_hash(gapped_shape,
+                                                            seqan3::window_size{8},
+                                                            bloomfilter,
+                                                            seqan3::seed{0});
+    result_t weighted_ungapped{27, 109, 27, 6};    // ccgt, CGAC, ACGT, aacg, aaac
+    EXPECT_RANGE_EQ(weighted_ungapped, text | weighted_ungapped_view);
+    result_t weighted_gapped{3, 5, 3, 2};    // ccgt, CGAC, ACGT, aacg, aaac
+    EXPECT_RANGE_EQ(weighted_gapped, text | weighted_gapped_view);
 }
 
 TEST_F(minimiser_hash_test, ungapped)
@@ -97,18 +121,42 @@ TEST_F(minimiser_hash_test, ungapped)
     EXPECT_RANGE_EQ(result2, text2 | ungapped_view);
     EXPECT_RANGE_EQ(ungapped3, text3 | ungapped_view);
 
+    seqan3::interleaved_bloom_filter<seqan3::data_layout::uncompressed> bloomfilter{seqan3::bin_count{1u},
+                                                                                    seqan3::bin_size{100u},
+                                                                                    seqan3::hash_function_count{1}};
+
+    bloomfilter.emplace(26, seqan3::bin_index{0u}); // ACGG
+    bloomfilter.emplace(1, seqan3::bin_index{0u}); // aaac
+    auto weighted_ungapped_view = seqan3::views::minimiser_hash(ungapped_shape,
+                                                              seqan3::window_size{8},
+                                                              bloomfilter,
+                                                              seqan3::seed{0});
+
+    EXPECT_RANGE_EQ(weighted_ungapped3, text3 | weighted_ungapped_view);
     auto stop_at_t = seqan3::views::take_until([] (seqan3::dna4 const x) { return x == 'T'_dna4; });
     EXPECT_RANGE_EQ(ungapped_stop_at_t3, text3 | stop_at_t | ungapped_view);
+    EXPECT_RANGE_EQ(weighted_ungapped_stop_at_t3, text3 | stop_at_t | weighted_ungapped_view);
 }
 
 TEST_F(minimiser_hash_test, gapped)
 {
+    seqan3::interleaved_bloom_filter<seqan3::data_layout::uncompressed> bloomfilter_gapped{seqan3::bin_count{1u},
+                                     seqan3::bin_size{100u},
+                                     seqan3::hash_function_count{1}}; // ACGG
+    bloomfilter_gapped.emplace(2, seqan3::bin_index{0u}); // A--G
+    bloomfilter_gapped.emplace(1, seqan3::bin_index{0u}); // a--c
+    auto weighted_gapped_view = seqan3::views::minimiser_hash(gapped_shape,
+                                                              seqan3::window_size{8},
+                                                              bloomfilter_gapped,
+                                                              seqan3::seed{0});
     EXPECT_RANGE_EQ(result1, text1 | gapped_view);
     EXPECT_RANGE_EQ(result2, text2 | gapped_view);
     EXPECT_RANGE_EQ(gapped3, text3 | gapped_view);
+    EXPECT_RANGE_EQ(weighted_gapped3, text3 | weighted_gapped_view);
 
     auto stop_at_t = seqan3::views::take_until([] (seqan3::dna4 const x) { return x == 'T'_dna4; });
     EXPECT_RANGE_EQ(gapped_stop_at_t3, text3 | stop_at_t | gapped_view);
+    EXPECT_RANGE_EQ(weighted_gapped_stop_at_t3, text3 | stop_at_t | weighted_gapped_view);
 }
 
 TEST_F(minimiser_hash_test, seed)

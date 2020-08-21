@@ -70,6 +70,8 @@ private:
     //!\brief Whether the given ranges are const_iterable
     static constexpr bool const_iterable = seqan3::const_iterable_range<urng1_t> &&
                                            seqan3::const_iterable_range<urng2_t>;
+    //!\brief The bloomfilter.
+    IBFType bloomfilter{};
 
     //!\brief The first underlying range.
     urng1_t urange1{};
@@ -142,6 +144,27 @@ public:
         }
     }
 
+    /*!\brief Construct from two views and a given number of values in one window.
+    * \param[in] urange1     The first input range to process. Must model std::ranges::viewable_range and
+    *                        std::ranges::forward_range.
+    * \param[in] urange2     The second input range to process. Must model std::ranges::viewable_range and
+    *                        std::ranges::forward_range.
+    * \param[in] window_size The number of values in one window.
+    * \param[in] bloomfilter The bloomfilter with hash values that should be down weighted.
+    */
+    minimiser_view(urng1_t urange1, urng2_t urange2, size_t const window_size, IBFType bloomfilter) :
+        bloomfilter{bloomfilter},
+        urange1{std::move(urange1)},
+        urange2{std::move(urange2)},
+        window_size{window_size}
+    {
+        if constexpr (second_range_is_given)
+        {
+            if (std::ranges::distance(urange1) != std::ranges::distance(urange2))
+                throw std::invalid_argument{"The two ranges do not have the same size."};
+        }
+    }
+
     /*!\brief Construct from two non-views that can be view-wrapped and a given number of values in one window.
     * \tparam other_urng1_t  The type of another urange. Must model std::ranges::viewable_range and be constructible
                              from urng1_t.
@@ -191,10 +214,17 @@ public:
      */
     basic_iterator<urng1_t, urng2_t> begin()
     {
+        if constexpr (bf)
         return {std::ranges::begin(urange1),
                 std::ranges::end(urange1),
                 std::ranges::begin(urange2),
-                window_size};
+                window_size,
+                bloomfilter};
+        else
+            return {std::ranges::begin(urange1),
+                    std::ranges::end(urange1),
+                    std::ranges::begin(urange2),
+                    window_size};
     }
 
     //!\copydoc begin()
@@ -203,11 +233,18 @@ public:
         requires const_iterable
     //!\endcond
     {
-        return {std::ranges::cbegin(urange1),
-                std::ranges::cend(urange1),
-                std::ranges::cbegin(urange2),
-                window_size};
-    }
+        if constexpr (bf)
+            return {std::ranges::cbegin(urange1),
+                    std::ranges::cend(urange1),
+                    std::ranges::cbegin(urange2),
+                    window_size,
+                    bloomfilter};
+        else
+            return {std::ranges::cbegin(urange1),
+                    std::ranges::cend(urange1),
+                    std::ranges::cbegin(urange2),
+                    window_size};
+        }
 
     /*!\brief Returns an iterator to the element following the last element of the range.
      * \returns Iterator to the end.
@@ -315,6 +352,36 @@ public:
 
         window_first(window_size);
     }
+
+    /*!\brief Construct from begin and end iterators of a given range over std::totally_ordered values, and the number
+              of values per window.
+    * \param[in] urng1_iterator Iterator pointing to the first position of the first std::totally_ordered range.
+    * \param[in] urng1_sentinel Iterator pointing to the last position of the first std::totally_ordered range.
+    * \param[in] urng2_iterator Iterator pointing to the first position of the second std::totally_ordered range.
+    * \param[in] window_size The number of values in one window.
+    * \param[in] bloomfilter The bloomfilter with hash values that should be down weighted.
+    *
+    * \details
+    *
+    * Looks at the number of values per window in two ranges, returns the smallest between both as minimiser and
+    * shifts then by one to repeat this action. If a minimiser in consecutive windows is the same, it is returned only
+    * once.
+    */
+    basic_iterator(urng1_iterator_t urng1_iterator,
+                   urng1_sentinel_t urng1_sentinel,
+                   urng2_iterator_t urng2_iterator,
+                   size_t window_size,
+                   IBFType bloomfilter) :
+        bloomfilter{std::move(bloomfilter)},
+        urng1_iterator{std::move(urng1_iterator)},
+        urng1_sentinel{std::move(urng1_sentinel)},
+        urng2_iterator{std::move(urng2_iterator)}
+    {
+        size_t size = std::ranges::distance(urng1_iterator, urng1_sentinel);
+        window_size = std::min<size_t>(window_size, size);
+
+        window_first(window_size);
+    }
     //!\}
 
     //!\anchor basic_iterator_comparison
@@ -382,6 +449,9 @@ public:
     }
 
 private:
+    //!\brief The bloomfilter.
+    IBFType bloomfilter{};
+
     //!\brief The minimiser value.
     value_type minimiser_value{};
 
@@ -404,16 +474,23 @@ private:
         while (!next_minimiser()) {}
     }
 
+    //!\brief Returns a weighted window value.
     auto weigthed_value() const
     {
+        auto agent = bloomfilter.membership_agent();
         if constexpr (!second_range_is_given)
         {
+            if (agent.bulk_contains(*urng1_iterator))
+                    return *urng1_iterator; //TODO: Find a good down weigthed method
+            else
                 return *urng1_iterator;
         }
         else
         {
-                return std::max(*urng1_iterator, *urng2_iterator);
-
+            if ((agent.bulk_contains(*urng1_iterator)[0] > 0) | (agent.bulk_contains(*urng2_iterator)[0] > 0))
+                    return std::max(*urng1_iterator, *urng2_iterator); //NOTE: There are cases, where urng1_iterator == urng2_iterator when using with kmer_hash, eg. ACGT
+            else
+                return std::min(*urng1_iterator, *urng2_iterator);
         }
 
     }
@@ -499,6 +576,19 @@ minimiser_view(rng1_t &&, size_t const window_size) -> minimiser_view<std::views
 template <std::ranges::viewable_range rng1_t, std::ranges::viewable_range rng2_t>
 minimiser_view(rng1_t &&, rng2_t &&, size_t const window_size) -> minimiser_view<std::views::all_t<rng1_t>,
                                                                                         std::views::all_t<rng2_t>>;
+
+//!\brief A deduction guide for the view class template.
+template <std::ranges::viewable_range rng1_t, class IBFType>
+minimiser_view(rng1_t &&, size_t const window_size, IBFType bloomfilter) -> minimiser_view<std::views::all_t<rng1_t>,
+                                                                    std::ranges::empty_view<seqan3::detail::empty_type>,
+                                                                    true,
+                                                                    IBFType>;
+//!\brief A deduction guide for the view class template.
+template <std::ranges::viewable_range rng1_t, std::ranges::viewable_range rng2_t, class IBFType>
+minimiser_view(rng1_t &&, rng2_t &&, size_t const window_size, IBFType bloomfilter) -> minimiser_view<std::views::all_t<rng1_t>,
+                                                                                        std::views::all_t<rng2_t>,
+                                                                                        true,
+                                                                                        IBFType>;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // minimiser_fn (adaptor definition)
