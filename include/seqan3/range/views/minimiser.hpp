@@ -19,6 +19,7 @@
 #include <seqan3/core/type_traits/lazy.hpp>
 #include <seqan3/range/concept.hpp>
 #include <seqan3/range/views/detail.hpp>
+#include <seqan3/search/dream_index/interleaved_bloom_filter.hpp>
 
 namespace seqan3::detail
 {
@@ -45,7 +46,9 @@ namespace seqan3::detail
  * \sa seqan3::views::minimiser
  */
 template <std::ranges::view urng1_t,
-          std::ranges::view urng2_t = std::ranges::empty_view<seqan3::detail::empty_type>>
+          std::ranges::view urng2_t = std::ranges::empty_view<seqan3::detail::empty_type>,
+          bool bf = false,
+          class IBFType = seqan3::interleaved_bloom_filter<seqan3::data_layout::compressed>>
 class minimiser_view : public std::ranges::view_interface<minimiser_view<urng1_t, urng2_t>>
 {
 private:
@@ -229,9 +232,9 @@ public:
 };
 
 //!\brief Iterator for calculating minimisers.
-template <std::ranges::view urng1_t, std::ranges::view urng2_t>
+template <std::ranges::view urng1_t, std::ranges::view urng2_t, bool bf, class IBFType>
 template <typename rng1_t, typename rng2_t>
-class minimiser_view<urng1_t, urng2_t>::basic_iterator
+class minimiser_view<urng1_t, urng2_t, bf, IBFType>::basic_iterator
 {
 private:
     //!\brief The sentinel type of the first underlying range.
@@ -401,10 +404,26 @@ private:
         while (!next_minimiser()) {}
     }
 
+    auto weigthed_value() const
+    {
+        if constexpr (!second_range_is_given)
+        {
+                return *urng1_iterator;
+        }
+        else
+        {
+                return std::max(*urng1_iterator, *urng2_iterator);
+
+        }
+
+    }
+
     //!\brief Returns new window value.
     auto window_value() const
     {
-        if constexpr (!second_range_is_given)
+        if constexpr (bf)
+            return weigthed_value();
+        else if constexpr (!second_range_is_given)
             return *urng1_iterator;
         else
             return std::min(*urng1_iterator, *urng2_iterator);
