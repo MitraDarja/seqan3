@@ -12,10 +12,6 @@
 
 #pragma once
 
-#include <seqan3/core/detail/strong_type.hpp>
-#include <seqan3/range/views/complement.hpp>
-#include <seqan3/range/views/kmer_hash.hpp>
-#include <seqan3/range/views/minimiser.hpp>
 #include <seqan3/range/views/minimiser_hash.hpp>
 #include <seqan3/search/dream_index/interleaved_bloom_filter.hpp>
 #include <seqan3/range/views/zip.hpp>
