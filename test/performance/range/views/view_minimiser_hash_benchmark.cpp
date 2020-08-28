@@ -9,6 +9,7 @@
 
 #include <seqan3/alphabet/nucleotide/dna4.hpp>
 #include <seqan3/range/views/minimiser_hash.hpp>
+#include <seqan3/range/views/weighted_minimiser_hash.hpp>
 #include <seqan3/test/performance/naive_minimiser_hash.hpp>
 #include <seqan3/test/performance/sequence_generator.hpp>
 #include <seqan3/test/performance/units.hpp>
@@ -55,6 +56,8 @@ enum class method_tag
 {
     seqan3_ungapped,
     seqan3_gapped,
+    seqan3_ungapped_weighted,
+    seqan3_gapped_weighted,
     naive,
     seqan2_ungapped,
     seqan2_gapped
@@ -73,6 +76,18 @@ inline auto make_gapped_shape_seqan2(size_t const k)
     return seqan::Shape<seqan::Dna, seqan::GenericShape>(bitmap);
 }
 #endif // SEQAN3_HAS_SEQAN2
+
+inline seqan3::interleaved_bloom_filter<seqan3::data_layout::compressed> get_bloomfilter()
+{
+    seqan3::interleaved_bloom_filter<seqan3::data_layout::uncompressed> bloomfilter{seqan3::bin_count{1u},
+                                                                                    seqan3::bin_size{100000u},
+                                                                                    seqan3::hash_function_count{1}};
+    for (int i = 0; i < 100; ++i)
+        bloomfilter.emplace(rand(), seqan3::bin_index{0u});
+
+    seqan3::interleaved_bloom_filter<seqan3::data_layout::uncompressed> cbloomfilter{bloomfilter};
+    return cbloomfilter;
+}
 
 template <method_tag tag>
 void compute_minimisers(benchmark::State & state)
@@ -102,6 +117,16 @@ void compute_minimisers(benchmark::State & state)
         else if constexpr (tag == method_tag::seqan3_gapped)
         {
             for (auto h : seq | seqan3::views::minimiser_hash(make_gapped_shape(k), seqan3::window_size{w}))
+                benchmark::DoNotOptimize(sum += h);
+        }
+        else if constexpr (tag == method_tag::seqan3_ungapped_weighted)
+        {
+            for (auto h : seqan3::views::weighted_minimiser_hash(seq, seqan3::ungapped{static_cast<uint8_t>(k)}, seqan3::window_size{w}, get_bloomfilter()))
+                benchmark::DoNotOptimize(sum += h);
+        }
+        else if constexpr (tag == method_tag::seqan3_gapped_weighted)
+        {
+            for (auto h : seqan3::views::weighted_minimiser_hash(seq, make_gapped_shape(k), seqan3::window_size{w}, get_bloomfilter()))
                 benchmark::DoNotOptimize(sum += h);
         }
         #ifdef SEQAN3_HAS_SEQAN2
@@ -169,6 +194,8 @@ BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan2_gapped)->Apply(argumen
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::naive)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_ungapped)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_gapped)->Apply(arguments);
+BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_ungapped_weighted)->Apply(arguments);
+BENCHMARK_TEMPLATE(compute_minimisers, method_tag::seqan3_gapped_weighted)->Apply(arguments);
 
 BENCHMARK_TEMPLATE(compute_minimisers_on_poly_A_sequence, method_tag::seqan3_ungapped)->Apply(arguments);
 BENCHMARK_TEMPLATE(compute_minimisers_on_poly_A_sequence, method_tag::seqan3_gapped)->Apply(arguments);
