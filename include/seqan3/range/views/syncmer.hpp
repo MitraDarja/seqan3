@@ -262,7 +262,7 @@ public:
         urng1_sentinel{std::move(urng1_sentinel)},
         urng2_iterator{std::move(urng2_iterator)}
     {
-        seqan3::debug_stream << *urng2_iterator;
+        //seqan3::debug_stream << *urng2_iterator;
         window_first(window_size);
     }
     //!\}
@@ -275,7 +275,7 @@ public:
     friend bool operator==(basic_iterator const & lhs, basic_iterator const & rhs)
     {
         return (lhs.urng1_iterator == rhs.urng1_iterator) &&
-               (rhs.urng2_iterator == rhs.urng2_iterator) &&
+               (lhs.urng2_iterator == rhs.urng2_iterator) &&
                (lhs.smer_values.size() == rhs.smer_values.size());
     }
 
@@ -357,10 +357,10 @@ private:
     //!\brief Calculates syncmers for the first window.
     void window_first(size_t const window_size)
     {
-        seqan3::debug_stream << "Before: "<< *urng2_iterator;
+        //seqan3::debug_stream << "Before: "<< *urng2_iterator;
         for (size_t i = 0u; i < window_size; ++i)
         {
-            seqan3::debug_stream << *urng2_iterator << "\n";
+            //seqan3::debug_stream << *urng2_iterator << "\n";
             smer_values.push_back(*urng2_iterator);
             ++urng2_iterator;
         }
@@ -370,7 +370,7 @@ private:
         smer_value = *smer_it;
         if ((smer_value == smer_values[0]) || (smer_value == smer_values[window_size]) )
             syncmer_value = *urng1_iterator;
-        seqan3::debug_stream << smer_values << "\n";
+        //seqan3::debug_stream << smer_values << "\n";
     }
 
     /*!\brief Calculates the next syncmer value.
@@ -381,14 +381,10 @@ private:
      */
     bool next_syncmer()
     {
-        if (urng1_iterator == urng1_sentinel)
-            return true;
         ++urng1_iterator;
         ++urng2_iterator;
-
-        value_type const new_smer_value = *urng2_iterator;
-
-        smer_values.push_back(new_smer_value);
+        if (urng1_iterator == urng1_sentinel)
+            return true;
 
         if (smer_value == smer_values[0])
         {
@@ -401,7 +397,10 @@ private:
             smer_values.pop_front();
         }
 
-        if ((new_smer_value <= smer_value))
+        value_type const new_smer_value = *urng2_iterator;
+        smer_values.push_back(new_smer_value);
+
+        if ((new_smer_value < smer_value))
         {
             syncmer_value = *urng1_iterator;
             smer_value = new_smer_value;
