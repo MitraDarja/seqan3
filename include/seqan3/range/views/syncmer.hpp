@@ -47,8 +47,9 @@ namespace seqan3::detail
  * \sa seqan3::views::syncmer
  */
 template <std::ranges::view urng1_t,
-          std::ranges::view urng2_t>
-class syncmer_view : public std::ranges::view_interface<syncmer_view<urng1_t, urng2_t>>
+          std::ranges::view urng2_t,
+          std::ranges::view urng3_t = std::ranges::empty_view<seqan3::detail::empty_type>>
+class syncmer_view : public std::ranges::view_interface<syncmer_view<urng1_t, urng2_t, urng3_t>>
 {
 private:
     static_assert(std::ranges::forward_range<urng1_t>, "The syncmer_view only works on forward_ranges.");
@@ -58,19 +59,31 @@ private:
     static_assert(std::totally_ordered<std::ranges::range_reference_t<urng2_t>>,
                   "The reference type of the underlying range must model std::totally_ordered.");
 
+    using default_urng3_t = std::ranges::empty_view<seqan3::detail::empty_type>;
+
+    //!\brief Boolean variable, which is true, when second range is not of empty type.
+    static constexpr bool third_range_is_given = !std::same_as<urng3_t, default_urng3_t>;
+
+    static_assert(!third_range_is_given || std::totally_ordered_with<std::ranges::range_reference_t<urng2_t>,
+                                                                    std::ranges::range_reference_t<urng3_t>>,
+                "The reference types of the underlying ranges must model std::totally_ordered_with.");
+
     //!\brief Whether the given ranges are const_iterable
     static constexpr bool const_iterable = seqan3::const_iterable_range<urng1_t> &&
-                                           seqan3::const_iterable_range<urng2_t>;
+                                           seqan3::const_iterable_range<urng2_t> &&
+                                           seqan3::const_iterable_range<urng3_t>;
 
     //!\brief The first underlying range.
     urng1_t urange1{};
     //!\brief The second underlying range.
     urng2_t urange2{};
+    //!\brief The third underlying range.
+    urng3_t urange3{};
 
     //!\brief The window size.
     size_t window_size{};
 
-    template <typename rng1_t, typename rng2_t>
+    template <typename rng1_t, typename rng2_t,  typename rng3_t>
     class basic_iterator;
 
     //!\brief The sentinel type of the syncmer_view.
@@ -125,6 +138,52 @@ public:
     {}
     //!\}
 
+    syncmer_view(urng1_t urange1, urng2_t urange2, urng3_t urange3, size_t const window_size) :
+        urange1{std::move(urange1)},
+        urange2{std::move(urange2)},
+        urange3{std::move(urange3)},
+        window_size{window_size}
+    {
+        if constexpr (third_range_is_given)
+        {
+            if (std::ranges::distance(urange2) != std::ranges::distance(urange3))
+                throw std::invalid_argument{"The two ranges do not have the same size."};
+        }
+    }
+
+    /*!\brief Construct from two non-views that can be view-wrapped and a given number of values in one window.
+    * \tparam other_urng1_t  The type of another urange. Must model std::ranges::viewable_range and be constructible
+                             from urng1_t.
+    * \tparam other_urng2_t  The type of another urange. Must model std::ranges::viewable_range and be constructible
+                             from urng2_t.
+    * \param[in] urange1     The input range to process. Must model std::ranges::viewable_range and
+    *                        std::ranges::forward_range.
+    * \param[in] urange2     The second input range to process. Must model std::ranges::viewable_range and
+    *                        std::ranges::forward_range.
+    * \param[in] window_size The number of values in one window.
+    */
+    template <typename other_urng1_t, typename other_urng2_t, typename other_urng3_t>
+    //!\cond
+        requires (std::ranges::viewable_range<other_urng1_t> &&
+                  std::constructible_from<urng1_t, std::views::all_t<other_urng1_t>> &&
+                  std::ranges::viewable_range<other_urng2_t> &&
+                  std::constructible_from<urng2_t, std::views::all_t<other_urng2_t>> &&
+                  std::ranges::viewable_range<other_urng3_t> &&
+                  std::constructible_from<urng2_t, std::views::all_t<other_urng3_t>>)
+    //!\endcond
+    syncmer_view(other_urng1_t && urange1, other_urng2_t && urange2, other_urng3_t && urange3, size_t const window_size) :
+        urange1{std::views::all(std::forward<other_urng1_t>(urange1))},
+        urange2{std::views::all(std::forward<other_urng2_t>(urange2))},
+        urange3{std::views::all(std::forward<other_urng2_t>(urange3))},
+        window_size{window_size}
+    {
+        if constexpr (third_range_is_given)
+        {
+            if (std::ranges::distance(urange2) != std::ranges::distance(urange3))
+                throw std::invalid_argument{"The two ranges do not have the same size."};
+        }
+    }
+
     /*!\name Iterators
      * \{
      */
@@ -141,17 +200,18 @@ public:
      *
      * Strong exception guarantee.
      */
-    basic_iterator<urng1_t, urng2_t> begin()
+    basic_iterator<urng1_t, urng2_t, urng3_t> begin()
     {
         //seqan3::debug_stream << "CALL: "<< *std::ranges::begin(urange2) << "\n";
         return {std::ranges::begin(urange1),
                 std::ranges::end(urange1),
                 std::ranges::begin(urange2),
+                std::ranges::begin(urange3),
                 window_size};
     }
 
     //!\copydoc begin()
-    basic_iterator<urng1_t const, urng2_t const> begin() const
+    basic_iterator<urng1_t const, urng2_t const, urng3_t const> begin() const
     //!\cond
         requires const_iterable
     //!\endcond
@@ -159,6 +219,7 @@ public:
         return {std::ranges::cbegin(urange1),
                 std::ranges::cend(urange1),
                 std::ranges::cbegin(urange2),
+                std::ranges::begin(urange3),
                 window_size};
     }
 
@@ -185,9 +246,9 @@ public:
 };
 
 //!\brief Iterator for calculating syncmers.
-template <std::ranges::view urng1_t, std::ranges::view urng2_t>
-template <typename rng1_t, typename rng2_t>
-class syncmer_view<urng1_t, urng2_t>::basic_iterator
+template <std::ranges::view urng1_t, std::ranges::view urng2_t, std::ranges::view urng3_t>
+template <typename rng1_t, typename rng2_t, typename rng3_t>
+class syncmer_view<urng1_t, urng2_t,  urng3_t>::basic_iterator
 {
 private:
     //!\brief The sentinel type of the first underlying range.
@@ -196,8 +257,10 @@ private:
     using urng1_iterator_t = std::ranges::iterator_t<rng1_t>;
     //!\brief The iterator type of the second underlying range.
     using urng2_iterator_t = std::ranges::iterator_t<rng2_t>;
+    //!\brief The iterator type of the third underlying range.
+    using urng3_iterator_t = std::ranges::iterator_t<rng3_t>;
 
-    template <typename, typename>
+    template <typename, typename, typename>
     friend class basic_iterator;
 
 public:
@@ -229,16 +292,20 @@ public:
     ~basic_iterator() = default; //!< Defaulted.
 
     //!\brief Allow iterator on a const range to be constructible from an iterator over a non-const range.
-    template <typename non_const_rng1_t, typename non_const_rng2_t>
+    template <typename non_const_rng1_t, typename non_const_rng2_t,  typename non_const_rng3_t>
     //!\cond
         requires ((std::is_const_v<rng1_t> && std::same_as<std::remove_const_t<rng1_t>, non_const_rng1_t>) &&
-                  (std::is_const_v<rng1_t> && std::same_as<std::remove_const_t<rng2_t>, non_const_rng2_t>))
+                  (std::is_const_v<rng1_t> && std::same_as<std::remove_const_t<rng2_t>, non_const_rng2_t>) &&
+                  (std::is_const_v<rng3_t> && std::same_as<std::remove_const_t<rng3_t>, non_const_rng3_t>))
      //!\endcond
-    basic_iterator(basic_iterator<non_const_rng1_t, non_const_rng2_t> it) :
+    basic_iterator(basic_iterator<non_const_rng1_t, non_const_rng2_t, non_const_rng3_t> it) :
         syncmer_value{std::move(it.syncmer_value)},
         urng1_iterator{std::move(it.urng1_iterator)},
         urng1_sentinel{std::move(it.urng1_sentinel)},
-        urng2_iterator{std::move(it.urng2_iterator)}
+        urng2_iterator{std::move(it.urng2_iterator)},
+        urng3_iterator{std::move(it.urng3_iterator)},
+        smer_values{std::move(it.smer_values)},
+        smer_values3{std::move(it.smer_values3)}
     {}
 
     /*!\brief Construct from begin and end iterators of a given range over std::totally_ordered values, and the number
@@ -257,10 +324,12 @@ public:
     basic_iterator(urng1_iterator_t urng1_iterator,
                    urng1_sentinel_t urng1_sentinel,
                    urng2_iterator_t urng2_iterator,
+                   urng3_iterator_t urng3_iterator,
                    size_t window_size) :
         urng1_iterator{std::move(urng1_iterator)},
         urng1_sentinel{std::move(urng1_sentinel)},
-        urng2_iterator{std::move(urng2_iterator)}
+        urng2_iterator{std::move(urng2_iterator)},
+        urng3_iterator{std::move(urng3_iterator)}
     {
         //seqan3::debug_stream << *urng2_iterator;
         window_first(window_size);
@@ -276,6 +345,7 @@ public:
     {
         return (lhs.urng1_iterator == rhs.urng1_iterator) &&
                (lhs.urng2_iterator == rhs.urng2_iterator) &&
+                (lhs.urng3_iterator == rhs.urng3_iterator) &&
                (lhs.smer_values.size() == rhs.smer_values.size());
     }
 
@@ -337,6 +407,7 @@ private:
 
     //!\brief The smer value.
     value_type smer_value{};
+    value_type smer_value3{};
 
     //!\brief Iterator to the rightmost value of one window.
     urng1_iterator_t urng1_iterator{};
@@ -344,14 +415,30 @@ private:
     urng1_sentinel_t urng1_sentinel{};
     //!\brief Iterator to the rightmost value of one window of the second range.
     urng2_iterator_t urng2_iterator{};
+    urng3_iterator_t urng3_iterator{};
 
     //!\brief Stored s-mers per window. It is necessary to store them, because a shift can remove the current syncmer.
     std::deque<value_type> smer_values{};
+    std::deque<value_type> smer_values3{};
 
     //!\brief Increments iterator by 1.
     void next_unique_syncmer()
     {
         while (!next_syncmer()) {}
+    }
+
+    void advance_window()
+    {
+        ++urng2_iterator;
+        if constexpr (third_range_is_given)
+            ++urng3_iterator;
+    }
+
+    void add_value()
+    {
+        smer_values.push_back(*urng2_iterator);
+        if constexpr (third_range_is_given)
+            smer_values3.push_back(*urng3_iterator);
     }
 
     //!\brief Calculates syncmers for the first window.
@@ -361,15 +448,23 @@ private:
         for (size_t i = 0u; i < window_size; ++i)
         {
             //seqan3::debug_stream << *urng2_iterator << "\n";
-            smer_values.push_back(*urng2_iterator);
-            ++urng2_iterator;
+            add_value();
+            advance_window();
         }
-        smer_values.push_back(*urng2_iterator);
+        add_value();
 
         auto smer_it = std::ranges::min_element(smer_values, std::less_equal<value_type>{});
         smer_value = *smer_it;
         if ((smer_value == smer_values[0]) || (smer_value == smer_values[window_size]) )
             syncmer_value = *urng1_iterator;
+
+        if constexpr (third_range_is_given)
+        {
+            auto smer_it3 = std::ranges::min_element(smer_values3, std::less_equal<value_type>{});
+            smer_value3 = *smer_it3;
+            if ((smer_value3 == smer_values3[0]) || (smer_value3 == smer_values3[window_size]) )
+                syncmer_value = *urng1_iterator;
+        }
         //seqan3::debug_stream << smer_values << "\n";
     }
 
@@ -382,23 +477,52 @@ private:
     bool next_syncmer()
     {
         ++urng1_iterator;
-        ++urng2_iterator;
         if (urng1_iterator == urng1_sentinel)
             return true;
+        advance_window();
 
         if (smer_value == smer_values[0])
         {
             smer_values.pop_front();
             auto smer_it = std::ranges::min_element(smer_values, std::less_equal<value_type>{});
             smer_value = *smer_it;
+
+            if constexpr (third_range_is_given)
+            {
+                smer_values3.pop_front();
+                auto smer_it3 = std::ranges::min_element(smer_values3, std::less_equal<value_type>{});
+                smer_value3 = *smer_it3;
+            }
         }
         else
         {
             smer_values.pop_front();
+            if constexpr (third_range_is_given)
+                smer_values3.pop_front();
         }
 
         value_type const new_smer_value = *urng2_iterator;
         smer_values.push_back(new_smer_value);
+        bool third_true = false;
+        if constexpr (third_range_is_given)
+        {
+
+            value_type const new_smer_value3 = *urng3_iterator;
+            smer_values3.push_back(new_smer_value3);
+
+            if ((new_smer_value3 < smer_value3))
+            {
+                syncmer_value = *urng1_iterator;
+                smer_value3 = new_smer_value3;
+                third_true = true;
+            }
+            else if (smer_value3 == smer_values3[0])
+            {
+                syncmer_value = *urng1_iterator;
+                smer_value3 = smer_values3[0];
+                third_true = true;
+            }
+        }
 
         if ((new_smer_value < smer_value))
         {
@@ -413,6 +537,9 @@ private:
             return true;
         }
 
+        if (third_true)
+            return true;
+
         return false;
     }
 };
@@ -422,6 +549,10 @@ private:
 template <std::ranges::viewable_range rng1_t, std::ranges::viewable_range rng2_t>
 syncmer_view(rng1_t &&, rng2_t &&, size_t const window_size) ->
 syncmer_view<std::views::all_t<rng1_t>, std::views::all_t<rng2_t>>;
+template <std::ranges::viewable_range rng1_t, std::ranges::viewable_range rng2_t,  std::ranges::viewable_range rng3_t>
+syncmer_view(rng1_t &&, rng2_t &&,  rng3_t &&, size_t const window_size) -> syncmer_view<std::views::all_t<rng1_t>,
+                                                                                        std::views::all_t<rng2_t>,
+                                                                                        std::views::all_t<rng3_t>>;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // syncmer_fn (adaptor definition)

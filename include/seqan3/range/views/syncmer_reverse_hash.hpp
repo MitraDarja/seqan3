@@ -19,6 +19,8 @@
 
 #include <seqan3/range/views/zip.hpp>
 
+#include <seqan3/core/debug_stream.hpp>
+
 namespace seqan3
 {
 //!\brief strong_type for seed.
@@ -102,15 +104,10 @@ struct syncmer_reverse_hash_fn
                                                                                   {return i ^ seed.get();})
                                                            | std::views::reverse;
 
-        auto forward_syncmers = std::forward<urng_t>(forward_strand)  | seqan3::views::syncmer(smers,  kmer.size() - window_size.size());
-        auto reverse_syncmers = seqan3::detail::syncmer_view(reverse_strand, reverse_smers,  kmer.size() - window_size.size());
-
         auto combined_strand = seqan3::views::zip(forward_strand, reverse_strand) | std::views::transform( [ ] (auto i) {return std::min(std::get<0>(i), std::get<1>(i));});
 
+        return seqan3::detail::syncmer_view(combined_strand, smers, reverse_smers,  kmer.size() - window_size.size());
 
-
-
-        return combined_strand | std::views::filter( [ ] (auto i) {return (std::find(forward_syncmers.begin(), forward_syncmers.end(), i) | std::find(reverse_syncmers.begin(), reverse_syncmers.end(), i)) ;};
     }
 };
 
