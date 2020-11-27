@@ -28,41 +28,46 @@ using seqan3::operator""_dna4;
 using seqan3::operator""_shape;
 using result_t = std::vector<size_t>;
 
-/*
+
 using iterator_type = std::ranges::iterator_t<decltype(std::declval<seqan3::dna4_vector&>()
                                                       | seqan3::views::syncmer_reverse_hash(seqan3::ungapped{5},
                                                                                     seqan3::ungapped{2},
+                                                                                    0,
                                                                                     seqan3::seed{0}))>;
-*/
+
 static constexpr seqan3::shape kmers = seqan3::ungapped{5};
 static constexpr seqan3::shape ungapped_shape = seqan3::ungapped{3};
 static constexpr seqan3::shape gapped_shape = 0b101_shape;
 static constexpr auto ungapped_view = seqan3::views::syncmer_reverse_hash(kmers,
                                                                   ungapped_shape,
+                                                                  0,
                                                                   seqan3::seed{0});
 static constexpr auto gapped_view = seqan3::views::syncmer_reverse_hash(kmers,
                                                                 gapped_shape,
+                                                                0,
                                                                 seqan3::seed{0});
-/*
+
 template <>
 struct iterator_fixture<iterator_type> : public ::testing::Test
 {
     using iterator_tag = std::forward_iterator_tag;
-    static constexpr bool const_iterable = false; //TODO: Check, why it does not work with true!
+    static constexpr bool const_iterable = true; //TODO: Check, why it does not work with true!
 
     seqan3::dna4_vector text{"GGCAAGT"_dna4};
-    result_t expected_range{126, 505, 656}; // acttg, cttgc, GGCAA
+    result_t expected_range{505, 126}; // cttgc, acttg
 
     using test_range_t = decltype(text | seqan3::views::syncmer_reverse_hash(kmers,
                                                                       seqan3::ungapped{2},
+                                                                      0,
                                                                       seqan3::seed{0}));
     test_range_t test_range = text |  seqan3::views::syncmer_reverse_hash(kmers,
                                                                       seqan3::ungapped{2},
+                                                                      0,
                                                                       seqan3::seed{0});
 };
 
 using test_types = ::testing::Types<iterator_type>;
-INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_types, );*/
+INSTANTIATE_TYPED_TEST_SUITE_P(iterator_fixture, iterator_fixture, test_types, );
 
 template <typename T>
 class syncmer_view_properties_test: public ::testing::Test { };
@@ -88,9 +93,9 @@ protected:
     std::vector<seqan3::dna4> too_short_text{"AC"_dna4};
 
     std::vector<seqan3::dna4> text3{"ACGGCGACGTTTAG"_dna4};
-    // ACGGC, cgccg, GGCGA, GCGAC, CGACG, acgtc, aacgt, aaacg, GTTTA, ctaaa
-    result_t result3{105, 406, 664, 609, 390, 109, 27, 6, 764, 448};
-    result_t result3_stop{105, 406, 664, 609, 390};       // For stop at first T
+    // ACGGC, CGGCG, cgtcg, CGACG, acgtc, aacgt, aaacg, GTTTA
+    result_t result3{105, 406, 390, 109, 27, 6, 764};
+    result_t result3_stop{105, 406, 390};       // For stop at first T
 
 };
 
@@ -125,8 +130,8 @@ TYPED_TEST(syncmer_view_properties_test, different_inputs_kmer_hash)
 {
     TypeParam text{'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4, 'C'_dna4, 'G'_dna4, 'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4,
                 'T'_dna4, 'T'_dna4, 'A'_dna4, 'G'_dna4}; // ACGTCGACGTTTAG
-    // ACGTC, cgacg, GTCGA, gtcga,  CGACG, acgtc, aacgt, aaacg, GTTTA, ctaaa
-    result_t result{109, 390, 728, 728, 390, 109, 27, 6, 764, 448};
+    // ACGTC, CGTCG, CGTCG, acgtc, aacgt, aaacg, GTTTA
+    result_t result{109, 390, 390, 109, 27, 6, 764};
     EXPECT_RANGE_EQ(result, text | ungapped_view);
     EXPECT_RANGE_EQ(result, text | gapped_view);
 }

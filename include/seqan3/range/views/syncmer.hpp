@@ -439,6 +439,7 @@ private:
     uint64_t position_offset3{};
     size_t window_size{};
     size_t offset{};
+    size_t offset3{};
 
 
     //!\brief Increments iterator by 1.
@@ -485,10 +486,11 @@ private:
 
         if constexpr (third_range_is_given)
         {
+            offset3 = window_size - offset;
             auto smer_it3 = std::ranges::min_element(smer_values3);
             smer_value3 = *smer_it3;
             position_offset3 = std::distance(std::begin(smer_values3), smer_it3);
-            if (position_offset3 == offset )
+            if (position_offset3 == offset3 )
             {
                 syncmer_value = *urng1_iterator;
                 first = false;
@@ -543,9 +545,9 @@ private:
         }
 
 
-
         value_type const new_smer_value = *urng2_iterator;
         smer_values.push_back(new_smer_value);
+
         if constexpr (third_range_is_given)
         {
 
@@ -582,7 +584,7 @@ private:
         }
         if constexpr (third_range_is_given)
         {
-            if (position_offset3 == offset )
+            if (position_offset3 == offset3 )
             {
                 syncmer_value = *urng1_iterator;
                 return true;

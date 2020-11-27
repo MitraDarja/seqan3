@@ -43,7 +43,18 @@ struct syncmer_reverse_hash_fn
     */
     constexpr auto operator()(shape const & kmer, shape const & window_size) const
     {
-        return seqan3::detail::adaptor_from_functor{*this, kmer, window_size};
+        return seqan3::detail::adaptor_from_functor{*this, kmer, window_size, 0};
+    }
+
+    /*!\brief Store the shape and the window size and return a range adaptor closure object.
+    * \param[in] shape       The seqan3::shape to use for hashing.
+    * \param[in] window_size The windows size to use.
+    * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
+    * \returns               A range of converted elements.
+    */
+    constexpr auto operator()(shape const & kmer, shape const & window_size, size_t const offset) const
+    {
+        return seqan3::detail::adaptor_from_functor{*this, kmer, window_size, offset};
     }
 
     /*!\brief Store the shape, the window size and the seed and return a range adaptor closure object.
@@ -53,9 +64,9 @@ struct syncmer_reverse_hash_fn
     * \throws std::invalid_argument if the size of the shape is greater than the `window_size`.
     * \returns               A range of converted elements.
     */
-    constexpr auto operator()(shape const & kmer, shape const & window_size, seed const seed) const
+    constexpr auto operator()(shape const & kmer, shape const & window_size, size_t const offset, seed const seed) const
     {
-        return seqan3::detail::adaptor_from_functor{*this, kmer, window_size, seed};
+        return seqan3::detail::adaptor_from_functor{*this, kmer, window_size, offset, seed};
     }
 
     /*!\brief Call the view's constructor with the underlying view, a seqan3::shape and a window size as argument.
@@ -71,6 +82,7 @@ struct syncmer_reverse_hash_fn
     constexpr auto operator()(urng_t && urange,
                               shape const & kmer,
                               shape const & window_size,
+                              size_t const offset = 0,
                               seed const seed = seed{0x8F3F73B5CF1C9ADE}) const
     {
         static_assert(std::ranges::viewable_range<urng_t>,
@@ -106,7 +118,7 @@ struct syncmer_reverse_hash_fn
 
         auto combined_strand = seqan3::views::zip(forward_strand, reverse_strand) | std::views::transform( [ ] (auto i) {return std::min(std::get<0>(i), std::get<1>(i));});
 
-        return seqan3::detail::syncmer_view(combined_strand, smers, reverse_smers,  kmer.size() - window_size.size());
+        return seqan3::detail::syncmer_view(combined_strand, smers, reverse_smers,  kmer.size() - window_size.size(), offset);
 
     }
 };
