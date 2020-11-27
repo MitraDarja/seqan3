@@ -36,20 +36,20 @@ inline static constexpr auto kmer_view = seqan3::views::kmer_hash(seqan3::ungapp
 
 using iterator_type = std::ranges::iterator_t< decltype(std::declval<seqan3::dna4_vector&>()
                                                | kmer_view
-                                               | seqan3::views::syncmer( std::declval<seqan3::dna4_vector&>() | smer_view, 3))>;
+                                               | seqan3::views::syncmer( std::declval<seqan3::dna4_vector&>() | smer_view, 3, 0))>;
 
 template <>
 struct iterator_fixture<iterator_type> : public ::testing::Test
 {
     using iterator_tag = std::forward_iterator_tag;
-    static constexpr bool const_iterable = false; //TODO: Check, why it does not work with true!
+    static constexpr bool const_iterable = true;
 
-    seqan3::dna4_vector text{"GGCAAGT"_dna4};
+    seqan3::dna4_vector text{"AAGGCGT"_dna4};
     decltype(seqan3::views::kmer_hash(text, seqan3::ungapped{5})) vec = text | seqan3::views::kmer_hash(seqan3::ungapped{5});
-    result_t expected_range{656}; // GGCAA
+    result_t expected_range{41, 166}; // AAGGC, AGGCG
 
-    decltype(seqan3::views::syncmer(seqan3::views::kmer_hash(text, seqan3::ungapped{5}), seqan3::views::kmer_hash(text, seqan3::ungapped{2}), 2)) test_range =
-    seqan3::views::syncmer(vec, text | seqan3::views::kmer_hash(seqan3::ungapped{2}), 2);
+    decltype(seqan3::views::syncmer(seqan3::views::kmer_hash(text, seqan3::ungapped{5}), seqan3::views::kmer_hash(text, seqan3::ungapped{2}), 2, 0)) test_range =
+    seqan3::views::syncmer(vec, text | seqan3::views::kmer_hash(seqan3::ungapped{2}), 2, 0);
 };
 
 using test_types = ::testing::Types<iterator_type>;
@@ -63,9 +63,9 @@ using underlying_range_types = ::testing::Types<std::vector<seqan3::dna4>,
                                                 seqan3::bitcompressed_vector<seqan3::dna4>,
                                                 seqan3::bitcompressed_vector<seqan3::dna4> const,
                                                 std::list<seqan3::dna4>,
-                                                std::list<seqan3::dna4> const>;
-                                                //std::forward_list<seqan3::dna4>, // TODO: Add them, at the moment segfault
-                                                //std::forward_list<seqan3::dna4> const>;
+                                                std::list<seqan3::dna4> const,
+                                                std::forward_list<seqan3::dna4>,
+                                                std::forward_list<seqan3::dna4> const>;
 TYPED_TEST_SUITE(syncmer_view_properties_test, underlying_range_types, );
 
 class syncmer_test : public ::testing::Test
@@ -79,10 +79,9 @@ protected:
     std::vector<seqan3::dna4> too_short_text{"AC"_dna4};
 
     std::vector<seqan3::dna4> text3{"ACGGCGACGTTTAG"_dna4};
-    // ACGGC, CGGCG, GGCGA, CGACG, ACGTT, CGTTT, GTTTA, TTTAG
-    result_t ungapped3{105, 422, 664, 390, 111, 447, 764, 1010};
-    result_t gapped3{105, 422, 664, 390, 111, 447, 764};
-    result_t result3_stop{105, 422, 664, 390};       // For stop at first T
+    // ACGGC, CGGCG, ACGTT, CGTTT, GTTTA
+    result_t result3{105, 422, 111, 447, 764};
+    result_t result3_stop{105, 422};       // For stop at first T
 
 };
 
@@ -105,46 +104,49 @@ TYPED_TEST(syncmer_view_properties_test, concepts)
     TypeParam text{'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4, 'C'_dna4, 'G'_dna4, 'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4,
                    'T'_dna4, 'T'_dna4, 'A'_dna4, 'G'_dna4}; // ACGTCGACGTTTAG
 
-    auto v = text | kmer_view | seqan3::views::syncmer(text | smer_view, 2);
+    auto v = text | kmer_view | seqan3::views::syncmer(text | smer_view, 2, 0);
     compare_types(v);
-
 }
-
 
 TYPED_TEST(syncmer_view_properties_test, different_inputs_kmer_hash)
 {
     TypeParam text{'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4, 'C'_dna4, 'G'_dna4, 'A'_dna4, 'C'_dna4, 'G'_dna4, 'T'_dna4,
                 'T'_dna4, 'T'_dna4, 'A'_dna4, 'G'_dna4}; // ACGTCGACGTTTAG
-    // ACGTC, CGTCG, GTCGA, CGACG, ACGTT, CGTTT, GTTTA, TTTAG
-    result_t ungapped{109, 438, 728, 390, 111, 447, 764, 1010};
-    result_t gapped{109, 438, 728, 390, 111, 447, 764};
-    EXPECT_RANGE_EQ(ungapped, text | kmer_view | seqan3::views::syncmer(text | smer_view, 2));
-    EXPECT_RANGE_EQ(gapped, text | kmer_view | seqan3::views::syncmer(text | gapped_smer_view, 2));
+    // ACGTC, CGTCG, ACGTT, CGTTT, GTTTA
+    result_t result{109, 438, 111, 447, 764};
+    // TCGAC, GACGT
+    result_t ungapped1{865, 539};
+    // TCGAC, GACGT, TTTAG
+    result_t gapped1{865, 539, 1010};
+    EXPECT_RANGE_EQ(result, text | kmer_view | seqan3::views::syncmer(text | smer_view, 2, 0));
+    EXPECT_RANGE_EQ(ungapped1, text | kmer_view | seqan3::views::syncmer(text | smer_view, 2, 1));
+    EXPECT_RANGE_EQ(result, text | kmer_view | seqan3::views::syncmer(text | gapped_smer_view, 2, 0));
+    EXPECT_RANGE_EQ(gapped1, text | kmer_view | seqan3::views::syncmer(text | gapped_smer_view, 2, 1));
 }
 
 TEST_F(syncmer_test, ungapped_kmer_hash)
 {
-    EXPECT_RANGE_EQ(result1, text1 | kmer_view | seqan3::views::syncmer(text1 | smer_view, 2) );
-    EXPECT_RANGE_EQ(result1_short, text1_short | kmer_view | seqan3::views::syncmer(text1 | smer_view, 2));
-    auto empty_view = too_short_text | kmer_view | seqan3::views::syncmer(too_short_text | smer_view, 2);
+    EXPECT_RANGE_EQ(result1, text1 | kmer_view | seqan3::views::syncmer(text1 | smer_view, 2, 0) );
+    EXPECT_RANGE_EQ(result1_short, text1_short | kmer_view | seqan3::views::syncmer(text1 | smer_view, 2, 0));
+    auto empty_view = too_short_text | kmer_view | seqan3::views::syncmer(too_short_text | smer_view, 2, 0);
     EXPECT_TRUE(std::ranges::empty(empty_view));
-    EXPECT_RANGE_EQ(ungapped3, text3 | kmer_view | seqan3::views::syncmer(text3 | smer_view, 2));
+    EXPECT_RANGE_EQ(result3, text3 | kmer_view | seqan3::views::syncmer(text3 | smer_view, 2, 0));
 }
 
 TEST_F(syncmer_test, gapped_kmer_hash)
 {
-    EXPECT_RANGE_EQ(result1, text1 | kmer_view | seqan3::views::syncmer(text1 | gapped_smer_view, 2));
-    EXPECT_RANGE_EQ(result1_short, text1_short | kmer_view | seqan3::views::syncmer(text1 | gapped_smer_view, 2));
-    auto empty_view = too_short_text | kmer_view | seqan3::views::syncmer(too_short_text | gapped_smer_view, 2);
+    EXPECT_RANGE_EQ(result1, text1 | kmer_view | seqan3::views::syncmer(text1 | gapped_smer_view, 2, 0));
+    EXPECT_RANGE_EQ(result1_short, text1_short | kmer_view | seqan3::views::syncmer(text1 | gapped_smer_view, 2, 0));
+    auto empty_view = too_short_text | kmer_view | seqan3::views::syncmer(too_short_text | gapped_smer_view, 2, 0);
     EXPECT_TRUE(std::ranges::empty(empty_view));
-    EXPECT_RANGE_EQ(gapped3, text3 | kmer_view | seqan3::views::syncmer(text3 | gapped_smer_view, 2));
+    EXPECT_RANGE_EQ(result3, text3 | kmer_view | seqan3::views::syncmer(text3 | gapped_smer_view, 2, 0));
 }
 
 TEST_F(syncmer_test, combinability)
 {
     auto stop_at_t = seqan3::views::take_until([] (seqan3::dna4 const x) { return x == 'T'_dna4; });
-    EXPECT_RANGE_EQ(result3_stop, text3 | stop_at_t | kmer_view | seqan3::views::syncmer(text3 | smer_view, 2));
-    EXPECT_RANGE_EQ(result3_stop, text3 | stop_at_t | kmer_view | seqan3::views::syncmer(text3 | gapped_smer_view, 2));
+    EXPECT_RANGE_EQ(result3_stop, text3 | stop_at_t | kmer_view | seqan3::views::syncmer(text3 | smer_view, 2, 0));
+    EXPECT_RANGE_EQ(result3_stop, text3 | stop_at_t | kmer_view | seqan3::views::syncmer(text3 | gapped_smer_view, 2, 0));
 }
 //TODO: This leads to a segfault, why?
 /*
@@ -156,7 +158,7 @@ TEST_F(syncmer_test, non_arithmetic_value)
     //seqan3::debug_stream << text3_smers;
     seqan3::debug_stream << *std::ranges::begin(text3_smers) << "\n";
     seqan3::debug_stream <<  text3_smers << "\n";
-    EXPECT_RANGE_EQ("AGGCGAGTTTAG"_dna4, text3 | seqan3::views::syncmer(text3_smers, 2));
+    EXPECT_RANGE_EQ("AGGCGAGTTTAG"_dna4, text3 | seqan3::views::syncmer(text3_smers, 2, 0));
     //  CG
     // G
     // ACGCGAGTAG

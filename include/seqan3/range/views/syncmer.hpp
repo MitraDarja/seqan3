@@ -83,6 +83,8 @@ private:
     //!\brief The window size.
     size_t window_size{};
 
+    size_t offset{};
+
     template <typename rng1_t, typename rng2_t,  typename rng3_t>
     class basic_iterator;
 
@@ -107,10 +109,11 @@ public:
     *                        std::ranges::forward_range.
     * \param[in] submer_size The number of values in one window.
     */
-    syncmer_view(urng1_t urange1, urng2_t urange2, size_t const window_size) :
+    syncmer_view(urng1_t urange1, urng2_t urange2, size_t window_size, size_t offset) :
         urange1{std::move(urange1)},
         urange2{std::move(urange2)},
-        window_size{window_size}
+        window_size{window_size},
+        offset{offset}
     {}
 
     /*!\brief Construct from two non-views that can be view-wrapped and a given number of values in one window.
@@ -131,18 +134,20 @@ public:
                   std::ranges::viewable_range<other_urng2_t> &&
                   std::constructible_from<urng2_t, std::views::all_t<other_urng2_t>>)
     //!\endcond
-    syncmer_view(other_urng1_t && urange1, other_urng2_t && urange2, size_t const window_size) :
+    syncmer_view(other_urng1_t && urange1, other_urng2_t && urange2, size_t window_size, size_t offset) :
         urange1{std::views::all(std::forward<other_urng1_t>(urange1))},
         urange2{std::views::all(std::forward<other_urng2_t>(urange2))},
-        window_size{window_size}
+        window_size{window_size},
+        offset{offset}
     {}
     //!\}
 
-    syncmer_view(urng1_t urange1, urng2_t urange2, urng3_t urange3, size_t const window_size) :
+    syncmer_view(urng1_t urange1, urng2_t urange2, urng3_t urange3, size_t window_size, size_t offset) :
         urange1{std::move(urange1)},
         urange2{std::move(urange2)},
         urange3{std::move(urange3)},
-        window_size{window_size}
+        window_size{window_size},
+        offset{offset}
     {
         if constexpr (third_range_is_given)
         {
@@ -171,11 +176,12 @@ public:
                   std::ranges::viewable_range<other_urng3_t> &&
                   std::constructible_from<urng2_t, std::views::all_t<other_urng3_t>>)
     //!\endcond
-    syncmer_view(other_urng1_t && urange1, other_urng2_t && urange2, other_urng3_t && urange3, size_t const window_size) :
+    syncmer_view(other_urng1_t && urange1, other_urng2_t && urange2, other_urng3_t && urange3, size_t window_size, size_t offset) :
         urange1{std::views::all(std::forward<other_urng1_t>(urange1))},
         urange2{std::views::all(std::forward<other_urng2_t>(urange2))},
         urange3{std::views::all(std::forward<other_urng2_t>(urange3))},
-        window_size{window_size}
+        window_size{window_size},
+        offset{offset}
     {
         if constexpr (third_range_is_given)
         {
@@ -207,7 +213,8 @@ public:
                 std::ranges::end(urange1),
                 std::ranges::begin(urange2),
                 std::ranges::begin(urange3),
-                window_size};
+                window_size,
+                offset};
     }
 
     //!\copydoc begin()
@@ -220,7 +227,8 @@ public:
                 std::ranges::cend(urange1),
                 std::ranges::cbegin(urange2),
                 std::ranges::begin(urange3),
-                window_size};
+                window_size,
+                offset};
     }
 
     /*!\brief Returns an iterator to the element following the last element of the range.
@@ -305,7 +313,9 @@ public:
         urng2_iterator{std::move(it.urng2_iterator)},
         urng3_iterator{std::move(it.urng3_iterator)},
         smer_values{std::move(it.smer_values)},
-        smer_values3{std::move(it.smer_values3)}
+        smer_values3{std::move(it.smer_values3)},
+        window_size{std::move(it.window_size)},
+        offset{std::move(it.offset)}
     {}
 
     /*!\brief Construct from begin and end iterators of a given range over std::totally_ordered values, and the number
@@ -325,14 +335,17 @@ public:
                    urng1_sentinel_t urng1_sentinel,
                    urng2_iterator_t urng2_iterator,
                    urng3_iterator_t urng3_iterator,
-                   size_t window_size) :
+                   size_t window_size,
+                   size_t offset) :
         urng1_iterator{std::move(urng1_iterator)},
         urng1_sentinel{std::move(urng1_sentinel)},
         urng2_iterator{std::move(urng2_iterator)},
-        urng3_iterator{std::move(urng3_iterator)}
+        urng3_iterator{std::move(urng3_iterator)},
+        window_size{std::move(window_size)},
+        offset{std::move(offset)}
     {
         //seqan3::debug_stream << *urng2_iterator;
-        window_first(window_size);
+        window_first();
     }
     //!\}
 
@@ -346,6 +359,7 @@ public:
         return (lhs.urng1_iterator == rhs.urng1_iterator) &&
                (lhs.urng2_iterator == rhs.urng2_iterator) &&
                 (lhs.urng3_iterator == rhs.urng3_iterator) &&
+                (lhs.syncmer_value == rhs.syncmer_value) &&
                (lhs.smer_values.size() == rhs.smer_values.size());
     }
 
@@ -421,6 +435,12 @@ private:
     std::deque<value_type> smer_values{};
     std::deque<value_type> smer_values3{};
 
+    uint64_t position_offset{};
+    uint64_t position_offset3{};
+    size_t window_size{};
+    size_t offset{};
+
+
     //!\brief Increments iterator by 1.
     void next_unique_syncmer()
     {
@@ -442,8 +462,9 @@ private:
     }
 
     //!\brief Calculates syncmers for the first window.
-    void window_first(size_t const window_size)
+    void window_first()
     {
+        bool first = true;
         //seqan3::debug_stream << "Before: "<< *urng2_iterator;
         for (size_t i = 0u; i < window_size; ++i)
         {
@@ -453,18 +474,28 @@ private:
         }
         add_value();
 
-        auto smer_it = std::ranges::min_element(smer_values, std::less_equal<value_type>{});
+        auto smer_it = std::ranges::min_element(smer_values);
         smer_value = *smer_it;
-        if ((smer_value == smer_values[0]) || (smer_value == smer_values[window_size]) )
+        position_offset = std::distance(std::begin(smer_values), smer_it);
+        if (position_offset == offset )
+        {
             syncmer_value = *urng1_iterator;
+            first = false;
+        }
 
         if constexpr (third_range_is_given)
         {
-            auto smer_it3 = std::ranges::min_element(smer_values3, std::less_equal<value_type>{});
+            auto smer_it3 = std::ranges::min_element(smer_values3);
             smer_value3 = *smer_it3;
-            if ((smer_value3 == smer_values3[0]) || (smer_value3 == smer_values3[window_size]) )
+            position_offset3 = std::distance(std::begin(smer_values3), smer_it3);
+            if (position_offset3 == offset )
+            {
                 syncmer_value = *urng1_iterator;
+                first = false;
+            }
         }
+        if (first)
+            next_unique_syncmer();
         //seqan3::debug_stream << smer_values << "\n";
     }
 
@@ -481,29 +512,40 @@ private:
             return true;
         advance_window();
 
-        if (smer_value == smer_values[0])
+        if (position_offset == 0)
         {
             smer_values.pop_front();
-            auto smer_it = std::ranges::min_element(smer_values, std::less_equal<value_type>{});
+            auto smer_it = std::ranges::min_element(smer_values);
             smer_value = *smer_it;
-
-            if constexpr (third_range_is_given)
-            {
-                smer_values3.pop_front();
-                auto smer_it3 = std::ranges::min_element(smer_values3, std::less_equal<value_type>{});
-                smer_value3 = *smer_it3;
-            }
+            position_offset = std::distance(std::begin(smer_values), smer_it);
         }
         else
         {
             smer_values.pop_front();
-            if constexpr (third_range_is_given)
-                smer_values3.pop_front();
+            position_offset--;
+
         }
+        if constexpr (third_range_is_given)
+        {
+            if (position_offset3 == 0)
+            {
+                smer_values3.pop_front();
+                auto smer_it3 = std::ranges::min_element(smer_values3);
+                position_offset3 = std::distance(std::begin(smer_values3), smer_it3);
+                smer_value3 = *smer_it3;
+            }
+            else
+            {
+                smer_values3.pop_front();
+                position_offset3--;
+            }
+
+        }
+
+
 
         value_type const new_smer_value = *urng2_iterator;
         smer_values.push_back(new_smer_value);
-        bool third_true = false;
         if constexpr (third_range_is_given)
         {
 
@@ -512,33 +554,40 @@ private:
 
             if ((new_smer_value3 < smer_value3))
             {
-                syncmer_value = *urng1_iterator;
                 smer_value3 = new_smer_value3;
-                third_true = true;
+                position_offset3 = window_size;
             }
             else if (smer_value3 == smer_values3[0])
             {
-                syncmer_value = *urng1_iterator;
                 smer_value3 = smer_values3[0];
-                third_true = true;
+                position_offset3 = 0;
             }
         }
 
         if ((new_smer_value < smer_value))
         {
-            syncmer_value = *urng1_iterator;
+            position_offset = window_size;
             smer_value = new_smer_value;
-            return true;
         }
         else if (smer_value == smer_values[0])
         {
-            syncmer_value = *urng1_iterator;
             smer_value = smer_values[0];
-            return true;
+            position_offset = 0;
         }
 
-        if (third_true)
+        if (position_offset == offset )
+        {
+            syncmer_value = *urng1_iterator;
             return true;
+        }
+        if constexpr (third_range_is_given)
+        {
+            if (position_offset3 == offset )
+            {
+                syncmer_value = *urng1_iterator;
+                return true;
+            }
+        }
 
         return false;
     }
@@ -547,10 +596,10 @@ private:
 
 //!\brief A deduction guide for the view class template.
 template <std::ranges::viewable_range rng1_t, std::ranges::viewable_range rng2_t>
-syncmer_view(rng1_t &&, rng2_t &&, size_t const window_size) ->
+syncmer_view(rng1_t &&, rng2_t &&, size_t window_size, size_t offset) ->
 syncmer_view<std::views::all_t<rng1_t>, std::views::all_t<rng2_t>>;
 template <std::ranges::viewable_range rng1_t, std::ranges::viewable_range rng2_t,  std::ranges::viewable_range rng3_t>
-syncmer_view(rng1_t &&, rng2_t &&,  rng3_t &&, size_t const window_size) -> syncmer_view<std::views::all_t<rng1_t>,
+syncmer_view(rng1_t &&, rng2_t &&,  rng3_t &&, size_t window_size, size_t offset) -> syncmer_view<std::views::all_t<rng1_t>,
                                                                                         std::views::all_t<rng2_t>,
                                                                                         std::views::all_t<rng3_t>>;
 
@@ -564,9 +613,9 @@ struct syncmer_fn
 {
     //!\brief Store the number of values in one window and return a range adaptor closure object.
     template <std::ranges::range urng2_t>
-    constexpr auto operator()(urng2_t && urange2, size_t const window_size) const
+    constexpr auto operator()(urng2_t && urange2, size_t window_size, size_t offset) const
     {
-        return adaptor_from_functor{*this, urange2, window_size};
+        return adaptor_from_functor{*this, urange2, window_size, offset};
     }
 
     /*!\brief Call the view's constructor with two arguments: the underlying view and an integer indicating how many
@@ -578,14 +627,14 @@ struct syncmer_fn
      * \returns  A range of converted values.
      */
     template <std::ranges::range urng1_t, std::ranges::range urng2_t>
-    constexpr auto operator()(urng1_t && urange1, urng2_t && urange2, size_t const window_size) const
+    constexpr auto operator()(urng1_t && urange1, urng2_t && urange2, size_t window_size, size_t offset) const
     {
         static_assert(std::ranges::viewable_range<urng1_t>,
                       "The range parameter to views::syncmer cannot be a temporary of a non-view range.");
         static_assert(std::ranges::forward_range<urng1_t>,
                       "The range parameter to views::syncmer must model std::ranges::forward_range.");
 
-        return syncmer_view{urange1, urange2, window_size};
+        return syncmer_view{urange1, urange2, window_size, offset};
     }
 };
 //![adaptor_def]
