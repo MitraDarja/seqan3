@@ -27,7 +27,7 @@
 #include <seqan3/range/container/concept.hpp>
 #include <seqan3/range/detail/inherited_iterator_base.hpp>
 #include <seqan3/range/detail/random_access_iterator.hpp>
-#include <seqan3/range/views/type_reduce.hpp>
+#include <seqan3/utility/views/type_reduce.hpp>
 
 namespace seqan3
 {
@@ -139,7 +139,7 @@ public:
      */
     using unaligned_sequence_type = inner_type;
 
-    //!\deprecated Please use seqan3::gap_decorator::unaligned_sequence_type instead.   
+    //!\deprecated Please use seqan3::gap_decorator::unaligned_sequence_type instead.
     using unaligned_seq_type SEQAN3_DEPRECATED_310 = unaligned_sequence_type;
 
     /*!\name Constructors, destructor and assignment

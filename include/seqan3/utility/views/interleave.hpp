@@ -22,9 +22,9 @@
 #include <seqan3/range/detail/random_access_iterator.hpp>
 #include <seqan3/range/views/detail.hpp>
 #include <seqan3/range/views/join.hpp>
-#include <seqan3/range/views/type_reduce.hpp>
 #include <seqan3/utility/type_traits/detail/transformation_trait_or.hpp>
 #include <seqan3/utility/type_traits/pre.hpp>
+#include <seqan3/utility/views/type_reduce.hpp>
 
 namespace seqan3::detail
 {
