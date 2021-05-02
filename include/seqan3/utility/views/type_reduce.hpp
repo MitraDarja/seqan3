@@ -173,5 +173,5 @@ namespace seqan3
  * \sa https://en.cppreference.com/w/cpp/ranges/all_view
  */
 template <typename t>
-using type_reduce_view = decltype(views::type_reduce(std::declval<t>()));
+using type_reduce_t = decltype(views::type_reduce(std::declval<t>()));
 }

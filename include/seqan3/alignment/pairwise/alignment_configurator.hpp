@@ -277,8 +277,8 @@ public:
         using first_seq_t = std::tuple_element_t<0, std::ranges::range_value_t<sequences_t>>;
         using second_seq_t = std::tuple_element_t<1, std::ranges::range_value_t<sequences_t>>;
 
-        using wrapped_first_t  = type_reduce_view<first_seq_t &>;
-        using wrapped_second_t = type_reduce_view<second_seq_t &>;
+        using wrapped_first_t  = type_reduce_t<first_seq_t &>;
+        using wrapped_second_t = type_reduce_t<second_seq_t &>;
 
         // The alignment executor passes a chunk over an indexed sequence pair range to the alignment algorithm.
         using indexed_sequence_pair_range_t = typename chunked_indexed_sequence_pairs<sequences_t>::type;

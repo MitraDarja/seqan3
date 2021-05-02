@@ -241,8 +241,8 @@ private:
         }
     }
 
-    type_reduce_view<fst_sequence_t> fst_rng; //!< A view over the first range.
-    type_reduce_view<sec_sequence_t> sec_rng; //!< A view over the second range.
+    type_reduce_t<fst_sequence_t> fst_rng; //!< A view over the first range.
+    type_reduce_t<sec_sequence_t> sec_rng; //!< A view over the second range.
 };
 
 /*!\name Type deduction guides

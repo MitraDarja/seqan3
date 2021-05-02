@@ -29,7 +29,7 @@ struct alignment_selector_test : public ::testing::Test
     using seq1_t = std::vector<seqan3::dna4>;
     using seq2_t = std::list<seqan3::dna4>;
 
-    using gapped_seq1_t = seqan3::gap_decorator<seqan3::type_reduce_view<std::vector<seqan3::dna4> &>>;
+    using gapped_seq1_t = seqan3::gap_decorator<seqan3::type_reduce_t<std::vector<seqan3::dna4> &>>;
     using gapped_seq2_t = std::vector<seqan3::gapped<seqan3::dna4>>;
 
     using alignment_t = std::tuple<gapped_seq1_t, gapped_seq2_t>;
