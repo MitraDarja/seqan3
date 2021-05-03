@@ -155,7 +155,6 @@ namespace seqan3::views
  *
  * \hideinitializer
  * \experimentalapi{Experimental since version 3.1.}
- * \todo Move to utility
  */
 inline constexpr auto type_reduce = detail::type_reduce_fn{};
 
@@ -168,8 +167,6 @@ namespace seqan3
 /*!\brief Deduces the return value of seqan3::views::type_reduce.
  * \details
  * \noapi
- * \todo // move to utility
- * \todo // rename to seqan3::views::type_reduce_t in spirit of std::views::all_t
  * \sa https://en.cppreference.com/w/cpp/ranges/all_view
  */
 template <typename t>
